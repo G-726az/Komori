@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "What the island and settings pages may call.",
+  "windows": ["island", "settings"],
+  "permissions": ["core:default", "dialog:allow-open"]
+}

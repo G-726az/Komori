@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>Komori — hoja de mascotas (solo desarrollo)</title>
+    <style>
+      body { margin: 0; padding: 16px; background: #10181a; color: #cde; font: 12px system-ui; }
+      .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; }
+      .row > b { width: 90px; }
+      .cell { display: flex; flex-direction: column; align-items: center; gap: 2px; background: #182326; border-radius: 10px; padding: 4px; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import { createPet } from "/src/island/pet.ts";
+      import { ITEMS } from "/src/island/wardrobe.ts";
+      const root = document.getElementById("root");
+      const params = new URLSearchParams(location.search);
+      const size = Number(params.get("size") || 96);
+      const pets = (params.get("pets") || "bou,ghost,cat,bat").split(",");
+      const looks = [{ name: "—" }, { name: "descanso", rest: true }, ...ITEMS.map((i) => ({ name: i.name, [i.slot]: i.id }))];
+      const only = params.get("looks")?.split(",");
+      const shown = only ? looks.filter((l) => only.includes(l.head ?? l.face ?? (l.rest ? "rest" : "none"))) : looks;
+      for (const kind of pets) {
+        const row = document.createElement("div");
+        row.className = "row";
+        row.innerHTML = `<b>${kind}</b>`;
+        for (const look of shown) {
+          const pet = createPet(size);
+          pet.setKind(kind, params.get("color") || undefined, params.get("style") || undefined);
+          pet.setOutfit({ head: look.head, face: look.face });
+          if (look.rest) pet.setSleeping(true);
+          const cell = document.createElement("div");
+          cell.className = "cell";
+          cell.append(pet.el, Object.assign(document.createElement("span"), { textContent: look.name }));
+          row.append(cell);
+        }
+        root.append(row);
+      }
+    </script>
+  </body>
+</html>

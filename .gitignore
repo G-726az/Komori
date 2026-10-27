@@ -1,0 +1,22 @@
+node_modules/
+dist/
+target/
+release/
+*.log
+.DS_Store
+Thumbs.db
+# Never commit keys or personal data.
+.env
+*.local.json
+scripts/*.done
+src-tauri/gen/
+
+# The neko is being remade (in Blender): kept out of the public repository.
+# The app works without it (pets are found at build time; see src/island/pet3d/models.ts).
+src/island/pet3d/pets/neko.ts
+src/island/pet3d/pets/neko.ts.*
+neko.ts.release-aside
+
+# Local tool settings.
+.impeccable/
+.claude/

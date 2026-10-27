@@ -1,0 +1,60 @@
+/* Shared look: fonts, theme variables (set by theme.ts), resets. */
+
+:root {
+  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --mono: "Cascadia Mono", "Cascadia Code", Consolas, ui-monospace, monospace;
+
+  --bg: #0c1412;
+  --panel: #141f1c;
+  --ink: #e6f2ee;
+  --dim: #8ea59e;
+  --line: 220, 255, 240;
+  --accent: #8fe3c0;
+  --edge: transparent;
+
+  --hair: rgba(var(--line), 0.08);
+  --hair-2: rgba(var(--line), 0.14);
+  --wash: rgba(var(--line), 0.05);
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  font-family: var(--font);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.icon {
+  display: block;
+  flex: none;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

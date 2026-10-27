@@ -1,0 +1,109 @@
+/* The progress line's looks (timeline.ts). Shared by the island and the
+   previews in Settings. Colours come from the page's theme variables. */
+
+.tl {
+  position: relative;
+  height: 24px;
+}
+
+.tl-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.tl-line,
+.tl-tick {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.tl-line {
+  stroke-width: 2;
+}
+
+.tl-tick {
+  stroke-width: 1.5;
+}
+
+.tl-track .tl-line,
+.tl-track .tl-tick {
+  stroke: rgba(var(--line), 0.24);
+}
+
+.tl-played .tl-line,
+.tl-played .tl-tick {
+  stroke: var(--accent);
+}
+
+.tl-dash {
+  stroke-dasharray: 16 12;
+}
+
+.tl-glitch .tl-played .tl-red {
+  stroke: #ff4d6a;
+}
+
+.tl-glitch .tl-played .tl-cyan {
+  stroke: #49dcff;
+  mix-blend-mode: screen;
+}
+
+.tl-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  translate: -50% -50%;
+  background: var(--ink);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+  transition: scale 160ms var(--ease-out);
+}
+
+.music-bar.seekable:hover .tl-thumb {
+  scale: 1.3;
+}
+
+.tl-glitch .tl-thumb {
+  background: #ff4d6a;
+}
+
+.tl-guiones .tl-thumb {
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 14px var(--accent);
+}
+
+.tl-regla .tl-thumb {
+  width: 10px;
+  height: 10px;
+}
+
+.tl-thumb.heart {
+  width: 18px;
+  height: 18px;
+  background: none;
+  box-shadow: none;
+}
+
+.tl-heart {
+  width: 100%;
+  height: 100%;
+  fill: #ff6b8a;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.35));
+}
+
+/* While playing, the glitch line shivers a little. */
+.music-bar.playing .tl-glitch .tl-red {
+  animation: tl-shiver 260ms steps(2, jump-none) infinite;
+}
+
+@keyframes tl-shiver {
+  50% {
+    translate: 1.5px -1px;
+  }
+}
