@@ -31,3 +31,32 @@ pub fn place(app: &AppHandle, width: f64, height: f64) {
     let _ = win.set_size(LogicalSize::new(width, height));
     let _ = win.set_always_on_top(true);
 }
+
+/// How big the island's contents are drawn (1.0 = 100 %). "auto" picks one
+/// from how much room the main display has; returns the scale used.
+#[tauri::command]
+pub fn island_zoom(app: AppHandle, scale: String) -> f64 {
+    let value = match scale.as_str() {
+        "auto" => auto_scale(&app),
+        s => s.parse::<f64>().unwrap_or(1.0),
+    }
+    .clamp(0.8, 1.6);
+    if let Some(win) = window(&app) {
+        let _ = win.set_zoom(value);
+    }
+    value
+}
+
+/// Small screens keep 100 %; wide ones get a bigger island.
+fn auto_scale(app: &AppHandle) -> f64 {
+    let Some(win) = window(app) else { return 1.0 };
+    let Some(monitor) = win.primary_monitor().ok().flatten() else { return 1.0 };
+    let width = monitor.size().width as f64 / monitor.scale_factor();
+    if width >= 2300.0 {
+        1.25
+    } else if width >= 1800.0 {
+        1.1
+    } else {
+        1.0
+    }
+}

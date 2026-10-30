@@ -9,6 +9,24 @@ export interface Version {
 }
 
 export const CHANGELOG: Version[] = [
+  { v: "0.2.0", name: "Estante", date: "Octubre 2026", items: [
+    "Nuevo ícono: Bou, con su brote, sentado en la isla",
+    "Nuevo estilo «Minimalista» (Ajustes → Apariencia): una isla negra y delgada, un solo tamaño para todo, con páginas compactas para Música, Claude Code, Calendario, Hoy, Sistema, Estante y Herramientas",
+    "Nueva barra de pestañas abajo, con el nombre de la pestaña abierta y el botón de Ajustes, en los dos estilos; la isla cerrada es delgada también en el estilo completo",
+    "Letras de las canciones sincronizadas línea por línea (LRCLIB, gratis y sin cuenta), y la línea que suena en la isla cerrada",
+    "Música a todo color en los dos estilos: la isla se tiñe con el color de la app que suena (verde Spotify, rojo YouTube, naranja Brave…, o el de la portada si es otra), se ve su nombre, la letra al lado, y el volumen de Windows con el mismo estilo de línea que la canción",
+    "Pestaña Claude Code: el proyecto, el tiempo que lleva y los pasos (Leer, Editar, Probar, Listo); en la isla completa, el cambio que hace como en un editor — líneas quitadas en rojo, añadidas en verde, con sus números — y el comando que corre",
+    "Estante de archivos: arrastra archivos a la isla y elige qué hacer — guardarlos en el estante, abrirlos, mostrarlos en su carpeta, copiar la ruta o copiarlos al Escritorio o a Descargas",
+    "Saludo al iniciar: la isla se abre un momento y la mascota te da los buenos días, tardes o noches (se apaga en Animaciones y 3D)",
+    "Calendario compacto: la semana en una tira, el clima del día elegido y su agenda, con un formulario rápido para agregar",
+    "Uso de cada núcleo del procesador en la página Sistema del estilo minimalista",
+    "Tamaño de la isla: Automático (según tu pantalla), 100 % o 125 % (Ajustes → Apariencia)",
+    "La línea de la canción se mueve con lo que suena — late, tiembla o salta con cada golpe, también con videos y juegos — y el ecualizador de la isla cerrada sigue el volumen real",
+    "Ajustes más ordenados: secciones nuevas para Música y Claude Code, el tamaño y la forma de la isla en Apariencia, y el descanso de la mascota en Mascota",
+    "Notas y Chat se pueden agrandar con las flechas de su cabecera",
+    "Barras de desplazamiento finas y discretas en toda la isla",
+    "Arreglos: el aviso de Claude ya no sale cortado en el estilo minimalista, la isla se cierra al abrir Ajustes y soltar archivos funciona desde el escritorio y el Explorador",
+  ] },
   { v: "0.1.0", name: "Vinilo", date: "Octubre 2026", items: [
     "La carátula de la música puede ir sola, con su vinilo que sale al sonar, o como un vinilo girando con la portada al centro",
     "Seis estilos para la línea de tiempo de la canción: Clásica, Latido, Glitch, Regla, Guiones y Flecha",

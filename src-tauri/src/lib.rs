@@ -13,6 +13,10 @@ mod store;
 mod sysmon;
 mod tray;
 mod update;
+mod lyrics;
+mod volume;
+mod shelf;
+mod file_drop;
 
 use std::sync::Mutex;
 
@@ -194,6 +198,15 @@ pub fn run() {
             update::update_install,
             update::open_project,
             update::open_kofi,
+            lyrics::lyrics_get,
+            volume::volume_get,
+            volume::volume_set,
+            volume::volume_mute,
+            volume::meter_watch,
+            shelf::shelf_info,
+            shelf::shelf_reveal,
+            shelf::shelf_copy_to,
+            island::island_zoom,
         ])
         .setup(|app| {
             let handle = app.handle().clone();
@@ -201,6 +214,7 @@ pub fn run() {
             idle::start(handle.clone());
             media::start(handle.clone());
             claude::start(handle.clone());
+            file_drop::install(&handle);
             // A missing tray icon (the taskbar not ready yet) must not stop the app.
             if let Err(err) = tray::build(&handle) {
                 eprintln!("[komori] tray: {err}");

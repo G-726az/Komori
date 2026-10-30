@@ -1,0 +1,2112 @@
+/* ── The open panel, both styles: header, tab, dock ───────────────────────
+   The full style uses the theme's colours; the minimal style below swaps in
+   black. */
+
+#island {
+  --mini-ink: var(--ink);
+  --mini-dim: var(--dim);
+  --mini-faint: rgba(var(--line), 0.1);
+}
+
+/* The header and the dock take a little room: the island grows by as much. */
+#island.open:not(.minimal) {
+  height: 500px;
+}
+
+#island.open.wide:not(.minimal) {
+  width: 960px;
+  height: 640px;
+}
+
+#island .body {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Scrollbars: a thin, quiet line that shows up a bit more on hover. */
+#island ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+#island ::-webkit-scrollbar-button {
+  display: none;
+}
+
+#island ::-webkit-scrollbar-track,
+#island ::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+#island ::-webkit-scrollbar-thumb {
+  border: 1px solid transparent;
+  border-radius: 3px;
+  background: rgba(var(--line), 0.14) padding-box;
+}
+
+#island ::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--line), 0.3) padding-box;
+}
+
+/* The closed pill: slim in both styles (the full one keeps its theme colours). */
+#island {
+  height: 34px;
+  border-radius: 17px;
+}
+
+#island.notch {
+  border-radius: 0 0 16px 16px;
+}
+
+#island .pill {
+  gap: 8px;
+  padding: 0 14px 0 12px;
+}
+
+#island .pill-pet {
+  width: 26px;
+  height: 26px;
+}
+
+#island .pill-pet canvas {
+  transform: translateY(-6px) scale(0.82);
+}
+
+#island .pill-time {
+  font-size: 12.5px;
+}
+
+#island .pill-sky,
+#island .pill-music {
+  font-size: 12px;
+}
+
+#island .pill-dot {
+  width: 5px;
+  height: 5px;
+}
+
+/* ── The minimal island ──────────────────────────────────────────────────
+   Pure black, slim when closed, a compact panel with one page at a time.
+   It is black in every theme (like a notch); the accent stays for focus. */
+
+#island.minimal {
+  --mini-ink: #f4f4f2;
+  --mini-dim: rgba(244, 244, 242, 0.55);
+  --mini-faint: rgba(244, 244, 242, 0.14);
+  /* The other tabs open inside it as they are: give them a dark palette. */
+  --bg: #000;
+  --panel: #151515;
+  --ink: #f4f4f2;
+  --dim: #9c9c98;
+  --line: 255, 255, 255;
+  --hair: rgba(255, 255, 255, 0.08);
+  --hair-2: rgba(255, 255, 255, 0.14);
+  --wash: rgba(255, 255, 255, 0.05);
+  color-scheme: dark;
+  background: #000;
+  color: var(--mini-ink);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.42);
+}
+
+/* A Claude or Komori notice on the closed island: the card's size, not the slim pill's. */
+#island.minimal.alerting {
+  width: 480px;
+  height: var(--alert-h, 140px);
+  border-radius: 22px;
+}
+
+#island.minimal.notch.alerting {
+  border-radius: 0 0 22px 22px;
+}
+
+/* One size for every tab. */
+#island.minimal.open {
+  width: 660px;
+  height: 280px;
+  border-radius: 30px;
+}
+
+/* Notas and Chat, widened with the arrows in their header. */
+#island.minimal.open.wide {
+  width: 780px;
+  height: 480px;
+}
+
+#island.minimal .panel {
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+/* A sung line on the closed island glows with the cover's colour. */
+#island.minimal.lyric-tint:not(.open):not(.alerting) {
+  background:
+    linear-gradient(100deg, #000 8%, color-mix(in srgb, var(--album, #000) 92%, #000) 62%, color-mix(in srgb, var(--album, #000) 70%, #4a4a4a));
+}
+
+#island.minimal.notch.open {
+  border-radius: 0 0 30px 30px;
+}
+
+#island.minimal.notch::before {
+  background: radial-gradient(circle at 0 100%, transparent 13.5px, var(--edge-ring, #000) 14px, var(--edge-ring, #000) calc(13.5px + var(--edge-w, 1.5px)), #000 calc(14px + var(--edge-w, 1.5px)));
+}
+
+#island.minimal.notch::after {
+  background: radial-gradient(circle at 100% 100%, transparent 13.5px, var(--edge-ring, #000) 14px, var(--edge-ring, #000) calc(13.5px + var(--edge-w, 1.5px)), #000 calc(14px + var(--edge-w, 1.5px)));
+}
+
+/* Closed: quieter secondary text on black. */
+#island.minimal .pill-sky,
+#island.minimal .pill-music {
+  color: var(--mini-dim);
+}
+
+#island.minimal .pill-dot {
+  box-shadow: none;
+}
+
+/* A lyric line on the closed island: white, one line, a soft swap. */
+.pill-lyric {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 360px;
+  color: var(--mini-ink, var(--ink));
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: lyric-in 260ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.pill-lyric svg {
+  flex: none;
+  color: var(--accent);
+}
+
+@keyframes lyric-in {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(4px);
+  }
+}
+
+/* Open: no tabs or header — just the page. */
+#island.minimal .head {
+  display: none;
+}
+
+#island.minimal .body {
+  padding: 0;
+  overflow: hidden;
+}
+
+.mini {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mini-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mini-stage > * {
+  position: absolute;
+  inset: 0;
+}
+
+.mini-stage > .enter-right {
+  animation: mini-in-right 280ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mini-stage > .enter-left {
+  animation: mini-in-left 280ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+@keyframes mini-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+    filter: blur(4px);
+  }
+}
+
+@keyframes mini-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+    filter: blur(4px);
+  }
+}
+
+/* Header: the pet, the page's name and the date. */
+.mini-head {
+  flex: none;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px 0 14px;
+}
+
+.mini-pet {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mini-pet:active {
+  transform: scale(0.92);
+}
+
+/* The pet's canvas is taller than the button (room for ears and hats): lift it. */
+.mini-pet canvas {
+  flex: none;
+  transform: translateY(-6px) scale(0.86);
+}
+
+.mini-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.mini-x {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--mini-dim);
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.mini-x:hover {
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+}
+
+.mini-when {
+  margin-left: auto;
+  font: 500 12px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--mini-dim);
+}
+
+/* The other tabs, as they are, with room to scroll. */
+.mini-full {
+  padding: 6px 16px 4px;
+  overflow: auto;
+}
+
+.mini.roomy .mini-full {
+  padding: 8px 16px 6px;
+}
+
+/* Dock: every tab; the one open shows its name. Then Ajustes. */
+.mini-dock {
+  flex: none;
+  height: 46px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 8px;
+}
+
+.mini-dock button {
+  height: 30px;
+  min-width: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 9px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--mini-dim);
+  transition: color 140ms ease, background 140ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mini-dock button:hover {
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+}
+
+.mini-dock button:active {
+  transform: scale(0.94);
+}
+
+.mini-dock button.on {
+  padding: 0 12px 0 10px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 17%, transparent);
+}
+
+.mini-dock .icon {
+  flex: none;
+}
+
+.mini-sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 6px;
+  background: var(--mini-faint);
+}
+
+/* The music page tints the whole island with the cover's colour. */
+.mini.tinted {
+  background:
+    radial-gradient(130% 120% at 0% 0%, color-mix(in srgb, var(--album) 85%, transparent), transparent 72%),
+    linear-gradient(180deg, color-mix(in srgb, var(--album) 45%, #000), #000 92%);
+  transition: background 400ms ease;
+}
+
+.mini.tinted .mini-dock button.on {
+  color: var(--mini-ink);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Música ── */
+
+.mm {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 4px 22px 4px;
+}
+
+.mm-cover {
+  flex: none;
+  width: 116px;
+  height: 116px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.5);
+}
+
+.mm-cover.none {
+  display: grid;
+  place-items: center;
+  color: var(--mini-dim);
+  background: #161616;
+}
+
+.mm-info {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mm.with-lyrics .mm-info {
+  flex: 0 0 210px;
+}
+
+.mm-title {
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mm-artist {
+  font-size: 12.5px;
+  color: var(--mini-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mm-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font: 500 11px var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--mini-dim);
+}
+
+.mm-bar {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.mm-bar.seek {
+  cursor: pointer;
+}
+
+.mm-bar .tl,
+.mv-bar .tl {
+  height: 18px;
+}
+
+/* The minimal island is black: the unplayed part a little brighter. */
+#island.minimal .mm-bar .tl-track .tl-line,
+#island.minimal .mm-bar .tl-track .tl-tick,
+#island.minimal .mv-bar .tl-track .tl-line,
+#island.minimal .mv-bar .tl-track .tl-tick {
+  stroke: rgba(255, 255, 255, 0.22);
+}
+
+/* Back, play and forward centred under the song's line; the lyrics button apart. */
+.mm-controls {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.mm-controls .mm-lyr {
+  position: absolute;
+  right: 0;
+  margin: 0;
+}
+
+.mm-skip,
+.mm-play {
+  display: grid;
+  place-items: center;
+  color: var(--mini-ink);
+  border-radius: 50%;
+  transition: transform 140ms cubic-bezier(0.23, 1, 0.32, 1), background 140ms ease, opacity 140ms ease;
+}
+
+.mm-skip {
+  width: 32px;
+  height: 32px;
+}
+
+.mm-skip:hover {
+  background: var(--mini-faint);
+}
+
+.mm-skip:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.mm-play {
+  width: 38px;
+  height: 38px;
+  color: #000;
+  background: var(--mini-ink);
+}
+
+.mm-skip:active,
+.mm-play:active {
+  transform: scale(0.94);
+}
+
+.mm-lyr {
+  width: 30px;
+  height: 30px;
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--mini-dim);
+  transition: color 140ms ease, background 140ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mm-lyr:hover {
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+}
+
+.mm-lyr.on {
+  color: var(--mini-ink);
+}
+
+.mm-lyr:active {
+  transform: scale(0.94);
+}
+
+/* Volume: the speaker mutes; the bar drags (or scroll over it). */
+.mv {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.mv-btn {
+  width: 26px;
+  height: 26px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--mini-dim);
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.mv-btn:hover {
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+}
+
+.mv-bar {
+  position: relative;
+  flex: 1 1 auto;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.mv-bar:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Who is playing: its name, with a little square in its colour. */
+.mm-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--mini-dim);
+}
+
+.mm-app i {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  color: #000;
+  background: var(--app);
+}
+
+.mm-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--mini-dim);
+  font-size: 14px;
+}
+
+/* Lyrics: the line being sung bright, the rest quiet; it scrolls itself. */
+.mm-lyrics {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-self: stretch;
+  margin: -8px 0 4px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 28%, black 72%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, black 28%, black 72%, transparent);
+}
+
+.mm-lines {
+  padding: 60px 16px 60px 0;
+  transition: transform 420ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mm-lines p {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: rgba(244, 244, 242, 0.32);
+  transition: color 240ms ease, transform 240ms cubic-bezier(0.23, 1, 0.32, 1);
+  transform-origin: 0 50%;
+}
+
+.mm-lines p.past {
+  color: rgba(244, 244, 242, 0.2);
+}
+
+.mm-lines p.now {
+  color: var(--mini-ink);
+  transform: scale(1.04);
+}
+
+.mm-lyrics.plain .mm-lines {
+  padding: 8px 0;
+}
+
+.mm-lyrics.plain .mm-lines p {
+  color: var(--mini-dim);
+  font-weight: 500;
+}
+
+/* ── Hoy ── */
+
+.mt {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  align-items: center;
+  gap: 18px;
+  padding: 6px 26px 6px;
+}
+
+.mt-clock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mt-time {
+  font: 700 40px/1 var(--mono);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mt-date {
+  font-size: 12.5px;
+  color: var(--mini-dim);
+  text-transform: capitalize;
+}
+
+.mt-sky {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mt-sky b {
+  display: block;
+  font-size: 24px;
+}
+
+.mt-sky span,
+.mt-next span {
+  display: block;
+  font-size: 12px;
+  color: var(--mini-dim);
+}
+
+.mt-next {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.mt-next b {
+  font-size: 14.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mt-label,
+.ms-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mini-dim);
+}
+
+.mt-dim {
+  color: var(--mini-dim);
+}
+
+/* ── Sistema ── */
+
+.ms {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  align-items: center;
+  padding: 8px 28px 6px;
+}
+
+.ms-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ms-meter b {
+  font: 700 30px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-bar {
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--mini-faint);
+}
+
+.ms-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  transition: transform 600ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ms-cores {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 22px;
+  margin-top: 2px;
+}
+
+.ms-cores i {
+  flex: 1 1 0;
+  height: 100%;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 75%, transparent);
+  transform-origin: 50% 100%;
+  transform: scaleY(0.06);
+  transition: transform 600ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ms-detail {
+  font-size: 11.5px;
+  color: var(--mini-dim);
+  min-height: 15px;
+}
+
+/* ── Herramientas ── */
+
+.mx {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 8px 28px 6px;
+  align-content: center;
+}
+
+.mx-tool {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mx-time {
+  font: 700 34px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.mx-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.mx-presets {
+  display: flex;
+  gap: 4px;
+}
+
+.mx-presets button {
+  padding: 6px 9px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--mini-dim);
+  background: var(--mini-faint);
+  transition: color 140ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mx-presets button:hover {
+  color: var(--mini-ink);
+}
+
+.mx-presets button:active {
+  transform: scale(0.95);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pill-lyric,
+  .mini-stage > .enter-right,
+  .mini-stage > .enter-left {
+    animation: none;
+  }
+
+  .mm-lines,
+  .mm-lines p,
+  .mini-dock button {
+    transition: none;
+  }
+}
+
+/* A sung line may be longer than a song's name. */
+.pill-music:has(.pill-lyric) {
+  max-width: 380px;
+}
+
+/* ── Claude Code ── */
+
+.mc {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 24px 10px;
+}
+
+.mc-full {
+  height: 100%;
+}
+
+.mc-full .mc {
+  height: 100%;
+  padding: 18px 26px 22px;
+}
+
+.mc-top {
+  display: flex;
+  gap: 24px;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.mc-left {
+  flex: 0 0 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mc-proj {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.mc-proj i {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: #fff;
+  background: #d97757;
+}
+
+.mc-time {
+  margin-top: 6px;
+  font: 700 46px/1 var(--mono);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mc-full .mc-time {
+  font-size: 72px;
+}
+
+.mc-state {
+  font-size: 12.5px;
+  color: var(--mini-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mc-right {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.mc-said {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--mini-dim);
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mc-log {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--mini-dim);
+  min-width: 0;
+  width: 100%;
+}
+
+.mc-log li {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.7;
+}
+
+.mc-log li.now {
+  color: var(--mini-ink);
+  opacity: 1;
+}
+
+.mc-log span {
+  display: inline-block;
+  min-width: 50px;
+  margin-right: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mini-dim);
+}
+
+.mc-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 6px 11px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+  transition: background 140ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mc-open:hover {
+  background: rgba(var(--line), 0.18);
+}
+
+.mc-open:active {
+  transform: scale(0.96);
+}
+
+.mc-steps {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.mc-step {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--mini-dim);
+}
+
+.mc-step i {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--mini-faint);
+  transition: background 300ms ease;
+}
+
+.mc-step.seen {
+  color: var(--mini-ink);
+}
+
+.mc-step.seen i {
+  background: var(--mini-ink);
+}
+
+.mc-steps.working .mc-step.now i {
+  background: #e8906d;
+  animation: mc-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes mc-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.mc-empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+}
+
+.mc-mark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  color: #fff;
+  background: #d97757;
+  margin-bottom: 4px;
+}
+
+.mc-hint {
+  font-size: 12.5px;
+  color: var(--mini-dim);
+}
+
+.mc-empty .mc-open {
+  margin-top: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-steps.working .mc-step.now i {
+    animation: none;
+  }
+}
+
+/* ── Calendario ── */
+
+.mk {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 18px 6px;
+}
+
+.mk-week {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.mk-arrow {
+  width: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: var(--mini-dim);
+}
+
+.mk-arrow:hover {
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+}
+
+.mk-day {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0 5px;
+  border-radius: 12px;
+  color: var(--mini-dim);
+  transition: background 140ms ease, color 140ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.mk-day:hover {
+  background: var(--mini-faint);
+}
+
+.mk-day:active {
+  transform: scale(0.96);
+}
+
+.mk-day b {
+  font: 700 16px/1.1 var(--mono);
+  color: var(--mini-ink);
+}
+
+.mk-wd {
+  font-size: 10.5px;
+  font-weight: 650;
+  text-transform: capitalize;
+}
+
+.mk-day.today b {
+  color: var(--accent);
+}
+
+.mk-day.on {
+  background: var(--mini-ink);
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.mk-day.on b {
+  color: #000;
+}
+
+.mk-nosky {
+  height: 16px;
+}
+
+.mk-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.mk-dot.off {
+  visibility: hidden;
+}
+
+.mk-bottom {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 18px;
+}
+
+.mk-sky {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mk-sky .ms-label {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+}
+
+.mk-sky-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mk-sky-row b {
+  display: block;
+  font-size: 17px;
+}
+
+.mk-sky-row span {
+  font-size: 11.5px;
+  color: var(--mini-dim);
+}
+
+.mk-agenda {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mk-list {
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mk-empty {
+  font-size: 12.5px;
+  color: var(--mini-dim);
+}
+
+.mk-ev {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 6px 5px 10px;
+  border-radius: 10px;
+  background: var(--mini-faint);
+  font-size: 12.5px;
+}
+
+.mk-ev b {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mk-time {
+  flex: none;
+  font: 500 11px var(--mono);
+  color: var(--mini-dim);
+}
+
+.mk-del,
+.mk-cancel {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--mini-dim);
+}
+
+.mk-del:hover,
+.mk-cancel:hover {
+  color: var(--mini-ink);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mk-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--mini-dim);
+}
+
+.mk-add:hover {
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+}
+
+.mk-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mk-in {
+  min-width: 0;
+  height: 30px;
+  padding: 0 9px;
+  border: 1px solid var(--mini-faint);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--mini-ink);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mk-in.grow {
+  flex: 1 1 auto;
+}
+
+.mk-in:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.mk-save {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+  background: var(--mini-ink);
+}
+
+/* ── The other tabs, fitted to the compact island ── */
+
+#island.minimal .chat-empty .music-empty-icon,
+#island.minimal .chat-empty p {
+  display: none;
+}
+
+#island.minimal .chat-empty {
+  gap: 8px;
+  padding: 0;
+  min-height: 0;
+}
+
+.mm-bar.seek:hover .tl-thumb,
+.mv-bar:hover .tl-thumb {
+  scale: 1.3;
+}
+
+/* ── Estante ── */
+
+.sh {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 2px 20px 8px;
+}
+
+.sh-full {
+  height: 100%;
+}
+
+.sh-full .sh {
+  height: 100%;
+  padding: 18px 24px;
+}
+
+.sh-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 24px;
+}
+
+.sh-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--mini-dim);
+}
+
+.sh-said {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  animation: lyric-in 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sh-clear {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 650;
+  color: var(--mini-dim);
+}
+
+.sh-clear:hover {
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+}
+
+/* The dashed place to drop things (and, while dragging, the whole page). */
+.sh-zone {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1.5px dashed var(--mini-faint);
+  border-radius: 18px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--mini-dim);
+}
+
+.sh-zone b {
+  font-size: 14px;
+  color: var(--mini-ink);
+}
+
+.sh-zone-ic {
+  margin-bottom: 4px;
+  color: var(--mini-dim);
+}
+
+.sh-zone.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  animation: sh-breathe 1.6s ease-in-out infinite;
+}
+
+.sh-zone.active .sh-zone-ic {
+  color: var(--accent);
+}
+
+@keyframes sh-breathe {
+  50% {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+}
+
+.sh.dragging {
+  padding-top: 8px;
+}
+
+/* Just dropped: what to do with it. */
+.sh-ask {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.sh-q {
+  font-size: 15px;
+}
+
+.sh-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.sh-chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 200px;
+  padding: 4px 10px 4px 5px;
+  border-radius: 9px;
+  font-size: 12px;
+  background: var(--mini-faint);
+}
+
+.sh-chip > span:last-child {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sh-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.sh-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--mini-ink);
+  background: var(--mini-faint);
+  transition: background 140ms ease, transform 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.sh-act:hover {
+  background: rgba(var(--line), 0.18);
+}
+
+.sh-act:active {
+  transform: scale(0.96);
+}
+
+.sh-act:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.sh-act.main {
+  color: #000;
+  background: var(--accent);
+}
+
+.sh-act.ghost {
+  background: none;
+  color: var(--mini-dim);
+}
+
+/* The shelf: a row of tiles that scrolls sideways. */
+.sh-row {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+}
+
+.sh-tile {
+  position: relative;
+  flex: none;
+  width: 116px;
+  border-radius: 14px;
+  background: var(--mini-faint);
+  transition: background 140ms ease;
+}
+
+.sh-tile:hover {
+  background: rgba(var(--line), 0.16);
+}
+
+.sh-tile.gone {
+  opacity: 0.45;
+}
+
+.sh-open {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 12px 8px 10px;
+  text-align: center;
+}
+
+.sh-name {
+  width: 100%;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.sh-size {
+  font-size: 10.5px;
+  color: var(--mini-dim);
+}
+
+.sh-ic {
+  flex: none;
+  object-fit: contain;
+}
+
+.sh-ic.none {
+  display: grid;
+  place-items: center;
+  color: var(--mini-dim);
+}
+
+.sh-tile .sh-ic {
+  width: 32px;
+  height: 32px;
+}
+
+.sh-chip .sh-ic {
+  width: 16px;
+  height: 16px;
+}
+
+.sh-tools {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+.sh-tile:hover .sh-tools,
+.sh-tile:focus-within .sh-tools {
+  opacity: 1;
+}
+
+.sh-tools button {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  color: var(--mini-ink);
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.sh-tools button:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sh-zone.active,
+  .sh-said {
+    animation: none;
+  }
+}
+
+/* ── The hello when Komori starts ── */
+
+.welcome-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 26px 14px 14px;
+}
+
+.welcome-pet {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  animation: welcome-pop 560ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both;
+}
+
+.welcome-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.welcome-text > * {
+  animation: welcome-rise 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.welcome-text b {
+  font-size: 20px;
+  letter-spacing: -0.01em;
+  animation-delay: 220ms;
+}
+
+.welcome-text span {
+  font-size: 12.5px;
+  color: var(--mini-dim);
+  animation-delay: 300ms;
+}
+
+.welcome-text .welcome-small {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  animation-delay: 380ms;
+}
+
+@keyframes welcome-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.6) translateY(6px);
+  }
+}
+
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-pet,
+  .welcome-text > * {
+    animation: none;
+  }
+}
+
+/* ── Claude Code, full island ── */
+
+.cc {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 18px;
+  padding: 10px 6px 4px;
+}
+
+.cc > .mc {
+  grid-column: 1 / -1;
+}
+
+.cc-who {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.cc-face {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  margin: 0 0 8px -4px;
+  display: grid;
+  place-items: center;
+  border-radius: 22px;
+  background: radial-gradient(circle at 50% 35%, rgba(var(--line), 0.1), transparent 70%);
+}
+
+.cc-face canvas {
+  transform: translateY(-2px) scale(1.15);
+}
+
+/* A little bubble on the pet: busy, waiting for you, or done. */
+.cc-badge {
+  position: absolute;
+  top: 4px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  background: #d97757;
+}
+
+.cc-face.working .cc-badge {
+  background: conic-gradient(#fff 0 25%, #d97757 0);
+  animation: cc-spin 900ms linear infinite;
+}
+
+.cc-face.waiting .cc-badge {
+  background: #f2b33d;
+}
+
+.cc-face.done .cc-badge {
+  background: #34c27a;
+}
+
+@keyframes cc-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+.cc-proj {
+  max-width: 100%;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-sub {
+  font-size: 12.5px;
+  color: var(--dim);
+}
+
+.cc-time {
+  margin: 8px 0 6px;
+  font: 700 28px/1 var(--mono);
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.cc-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 4px 0 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--dim);
+}
+
+.cc-steps li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.cc-mark {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--line), 0.25);
+}
+
+.cc-steps li.done {
+  color: var(--ink);
+}
+
+.cc-steps li.done .cc-mark {
+  border-color: #34c27a;
+  color: #fff;
+  background: #34c27a;
+}
+
+.cc-steps li.now {
+  color: var(--ink);
+}
+
+.cc-steps li.now .cc-mark {
+  border-color: rgba(var(--line), 0.25);
+  border-top-color: #d97757;
+  animation: cc-spin 800ms linear infinite;
+}
+
+.cc .mc-open {
+  margin-top: auto;
+}
+
+/* The view: like an editor tab, with the change in it. */
+.cc-view {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--panel) 70%, #000);
+  border: 1px solid var(--hair);
+  overflow: hidden;
+}
+
+.cc-tab {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--hair);
+  font-size: 13px;
+}
+
+.cc-tab b {
+  font: 600 13px var(--mono);
+}
+
+.cc-lang {
+  padding: 2px 5px;
+  border-radius: 5px;
+  font: 700 9.5px var(--mono);
+  color: #fff;
+}
+
+.cc-dirty {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #e8906d;
+}
+
+.cc-path {
+  margin-left: auto;
+  min-width: 0;
+  font: 500 11.5px var(--mono);
+  color: var(--dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: right;
+}
+
+.cc-term,
+.cc-ok {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  color: #fff;
+  background: #3a3f4b;
+}
+
+.cc-ok {
+  background: #34c27a;
+}
+
+.cc-code {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 0;
+  font: 500 12.5px/1.75 var(--mono);
+}
+
+.cc-ln {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 14px 0 0;
+  border-left: 3px solid transparent;
+  white-space: pre;
+}
+
+.cc-ln i {
+  flex: none;
+  width: 40px;
+  text-align: right;
+  font-style: normal;
+  color: rgba(var(--line), 0.35);
+}
+
+.cc-ln s {
+  flex: none;
+  width: 10px;
+  text-decoration: none;
+  color: rgba(var(--line), 0.4);
+}
+
+.cc-ln code {
+  font: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cc-ln.del {
+  border-left-color: #e5534b;
+  background: rgba(229, 83, 75, 0.16);
+}
+
+.cc-ln.del i,
+.cc-ln.del s {
+  color: #f08a84;
+}
+
+.cc-ln.del code {
+  color: #f0a29d;
+  text-decoration: line-through;
+  text-decoration-color: rgba(240, 138, 132, 0.6);
+}
+
+.cc-ln.add {
+  border-left-color: #34c27a;
+  background: rgba(52, 194, 122, 0.15);
+}
+
+.cc-ln.add i,
+.cc-ln.add s {
+  color: #6fdca4;
+}
+
+.cc-ln.add code {
+  color: var(--ink);
+}
+
+/* Still typing: a caret after the last added line. */
+.cc-ln.typing code::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 2px;
+  vertical-align: -0.2em;
+  background: var(--ink);
+  animation: cc-blink 1s steps(1) infinite;
+}
+
+@keyframes cc-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.cc-code.term .cc-ln s {
+  width: auto;
+  padding-left: 14px;
+  color: #6fdca4;
+}
+
+.cc-quiet {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--dim);
+}
+
+.cc-reply {
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  overflow: auto;
+}
+
+/* Light themes: the code view stays dark, like an editor. */
+.light .cc-view {
+  --ink: #e9eaee;
+  --dim: #9aa0aa;
+  --line: 255, 255, 255;
+  --hair: rgba(255, 255, 255, 0.08);
+  background: #1b1d22;
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-face.working .cc-badge,
+  .cc-steps li.now .cc-mark,
+  .cc-ln.typing code::after {
+    animation: none;
+  }
+}
+
+/* ── The full island's Música: the same page, roomier, with the record ── */
+
+.mm.roomy {
+  gap: 24px;
+  padding: 18px 26px 14px;
+}
+
+.mm.roomy .music-cover {
+  width: 200px;
+  height: 200px;
+}
+
+.mm.roomy .music-cover[data-art="sleeve"] {
+  width: 250px;
+}
+
+.mm.roomy .music-sleeve {
+  width: 200px;
+  height: 200px;
+}
+
+.mm.roomy .music-record {
+  width: 186px;
+  height: 186px;
+  left: 7px;
+  top: 7px;
+}
+
+.mm.roomy .music-cover[data-art="sleeve"].playing .music-record {
+  translate: 52px 0;
+}
+
+.mm.roomy .mm-info {
+  gap: 5px;
+}
+
+.mm.roomy.with-lyrics .mm-info {
+  flex: 0 0 228px;
+}
+
+.mm.roomy .mm-title {
+  font-size: 22px;
+}
+
+.mm.roomy .mm-artist {
+  font-size: 13.5px;
+}
+
+.mm.roomy .mm-lines p {
+  font-size: 15px;
+}
+
+.mm.roomy .mm-lyrics {
+  margin: 0;
+}
+
+/* Coloured by the cover (or by Claude) in the full style too: light text on it. */
+.mini.roomy.tinted {
+  --ink: #f4f4f2;
+  --dim: rgba(244, 244, 242, 0.62);
+  --mini-ink: #f4f4f2;
+  --mini-dim: rgba(244, 244, 242, 0.62);
+  --mini-faint: rgba(244, 244, 242, 0.14);
+  --line: 255, 255, 255;
+  --hair: rgba(255, 255, 255, 0.09);
+  --panel: rgba(0, 0, 0, 0.28);
+  color: var(--ink);
+}
+
+.light .mini.roomy.tinted .cc-view {
+  background: rgba(0, 0, 0, 0.32);
+}
+
+/* The closed island's equalizer, following the real sound (beat.ts). */
+.eq.live i {
+  animation: none;
+  transition: transform 90ms linear;
+}

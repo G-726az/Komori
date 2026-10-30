@@ -47,10 +47,10 @@ export interface CalEvent {
 
 export type MeterId = "cpu" | "ram" | "disk" | "net" | "battery";
 
-export type ModuleId = "home" | "music" | "calendar" | "system" | "apps" | "notes" | "tools" | "chat" | "github";
+export type ModuleId = "home" | "claude" | "music" | "calendar" | "system" | "apps" | "notes" | "shelf" | "tools" | "chat" | "github";
 
 /** Every module, in panel order. */
-export const ALL_MODULES: ModuleId[] = ["home", "music", "calendar", "system", "apps", "notes", "tools", "chat", "github"];
+export const ALL_MODULES: ModuleId[] = ["home", "claude", "music", "calendar", "system", "apps", "notes", "shelf", "tools", "chat", "github"];
 
 export type Provider = "anthropic" | "openai" | "ollama";
 
@@ -75,6 +75,12 @@ export interface Settings {
   hoverOpen: boolean;
   /** A coloured border around the island ("" colour = the accent). */
   islandBorder: { on: boolean; color: string; width: number };
+  /** "full": the island with tabs and cards; "minimal": slim and black, one page at a time. */
+  islandStyle: "full" | "minimal";
+  /** How big the island is drawn: picked from the screen, or 100 % / 125 %. */
+  islandScale: "auto" | "1" | "1.25";
+  /** Song lyrics (LRCLIB): in the music page, and the current line on the closed island. */
+  lyrics: { show: boolean; inPill: boolean };
   /** "float": a floating pill; "notch": glued to the top edge with curved corners. */
   islandShape: "float" | "notch";
   /** Minutes of a still mouse before the pet starts its idle animation. */
@@ -108,6 +114,8 @@ export interface Settings {
     eq: boolean;
     /** Moving progress lines (glitch shiver…) and soft idle motions (bobbing hours). */
     flourishes: boolean;
+    /** The song's line and the little equalizer move with what is playing (its real sound level). */
+    musicBeat: boolean;
     /** How hard to lean on the graphics card ("auto" decides by the card). */
     gpu: GpuMode;
   };
@@ -115,6 +123,8 @@ export interface Settings {
   sound: { pet: boolean; volume: number };
   /** The pet (and the forecast ring) turn to look at the mouse. */
   followMouse: boolean;
+  /** A short hello from the pet when Komori starts. */
+  welcome: boolean;
   /** Which meters the Sistema tab shows. */
   meters: Record<MeterId, boolean>;
   /** 1 = the week starts on Monday, 0 = on Sunday. */
@@ -152,6 +162,9 @@ export const DEFAULTS: Settings = {
   outfits: {},
   hoverOpen: true,
   islandShape: "float",
+  // New installs start minimal; "full" is the other choice in Apariencia.
+  islandStyle: "minimal",
+  lyrics: { show: true, inPill: true },
   islandBorder: { on: false, color: "", width: 2 },
   idleMinutes: 5,
   idleAnimation: true,
@@ -166,9 +179,11 @@ export const DEFAULTS: Settings = {
   },
   musicInPill: true,
   music: { art: "sleeve", timeline: "clasica" },
-  perf: { pet3d: true, petFps: 20, orbit: true, vinyl: true, eq: true, flourishes: true, gpu: "auto" },
+  perf: { pet3d: true, petFps: 20, orbit: true, vinyl: true, eq: true, flourishes: true, musicBeat: true, gpu: "auto" },
+  islandScale: "auto",
   sound: { pet: true, volume: 0.6 },
   followMouse: true,
+  welcome: true,
   meters: { cpu: true, ram: true, disk: true, net: true, battery: true },
   weekStart: 1,
   events: [],
@@ -204,7 +219,7 @@ export function settings(): Settings {
 /** Modules added in a newer version show up without anyone having to look for them. */
 function withNewModules(s: Settings, stored: Record<string, unknown> | null): Settings {
   // Installs from before this list existed knew every module but GitHub.
-  const known = (stored?.knownModules as ModuleId[] | undefined) ?? (stored ? ALL_MODULES.filter((m) => m !== "github" && m !== "tools") : ALL_MODULES);
+  const known = (stored?.knownModules as ModuleId[] | undefined) ?? (stored ? ALL_MODULES.filter((m) => m !== "github" && m !== "tools" && m !== "claude") : ALL_MODULES);
   const fresh = ALL_MODULES.filter((m) => !known.includes(m) && !s.modules.includes(m));
   // New ones take their place in the usual order.
   const modules = ALL_MODULES.filter((m) => s.modules.includes(m) || fresh.includes(m));

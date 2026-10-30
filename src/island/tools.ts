@@ -82,6 +82,33 @@ export function timerInfo() {
   return { left: timerLeft(), total: timer.total, running: timer.running, text: fmtLeft(timerLeft()) };
 }
 
+/** Set the timer to a number of minutes (stopped). */
+export function presetTimer(minutes: number) {
+  setTimer(minutes * 60_000);
+}
+
+/** For compact views: the stopwatch's time and a start/stop/reset. */
+export function watchInfo() {
+  const t = fmtWatch(watchNow());
+  return { running: watch.running, ms: watchNow(), text: t.main + t.small };
+}
+
+export function toggleWatch() {
+  if (watch.running) {
+    watch.base = watchNow();
+    watch.running = false;
+  } else {
+    watch.since = performance.now();
+    watch.running = true;
+  }
+}
+
+export function resetWatch() {
+  watch.running = false;
+  watch.base = 0;
+  watch.laps = [];
+}
+
 export function toggleTimer() {
   if (timer.running) pauseTimer();
   else if (timer.left > 0) startTimer();

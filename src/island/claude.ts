@@ -9,14 +9,18 @@ import { I } from "../shared/icons";
 import { settings } from "../shared/settings";
 
 export interface ClaudeEvent {
-  kind: "working" | "done" | "question" | "permission" | "waiting" | "ended";
+  kind: "working" | "tool" | "done" | "question" | "permission" | "waiting" | "ended";
+  /** For "tool": the tool Claude is about to use. */
+  tool?: string;
+  /** For "tool": what it works on (claude.rs `snippet`). */
+  snippet?: Snippet | null;
   session: string;
   project: string;
   message: string;
   questions: { header: string; question: string; options: string[] }[];
 }
 
-const SPARK = "M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9L12 2.5zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z";
+export const SPARK = "M12 2.5l1.9 5.6 5.6 1.9-5.6 1.9L12 17.5l-1.9-5.6L4.5 10l5.6-1.9L12 2.5zM19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z";
 
 /** Sessions Claude is working on right now. */
 const working = new Set<string>();
@@ -82,7 +86,7 @@ function card(ev: ClaudeEvent, host: AlertHost): HTMLElement {
     void Bridge.claudeFocus(ev.session);
     host.hide();
   } }, icon(SPARK, 14), "Abrir Claude");
-  return h("div", { class: `alert-card ${ev.kind}` },
+  return h("div", { class: `alert-card ${ev.kind}`, "data-claude": ev.kind },
     h("div", { class: "alert-head" },
       h("span", { class: "alert-icon" }, icon(ev.kind === "done" ? SPARK : I.chat, 16)),
       h("div", { class: "alert-titles" },
@@ -96,7 +100,99 @@ function card(ev: ClaudeEvent, host: AlertHost): HTMLElement {
   );
 }
 
+// ── The task in progress: which steps Claude went through, and for how long ──
+
+/** A change to a file, a command, or a file being read. */
+export type Snippet =
+  | { kind: "edit"; file: string; path: string; line: number; old: string[]; new: string[]; before?: string[]; after?: string[] }
+  | { kind: "command"; command: string[]; about: string }
+  | { kind: "read"; file: string; path: string };
+
+export type Step = "read" | "edit" | "test" | "done";
+export const STEPS: { id: Step; label: string; doing: string }[] = [
+  { id: "read", label: "Leer", doing: "Leyendo" },
+  { id: "edit", label: "Editar", doing: "Editando" },
+  { id: "test", label: "Probar", doing: "Probando" },
+  { id: "done", label: "Listo", doing: "Listo" },
+];
+
+export interface Progress {
+  session: string;
+  project: string;
+  /** Date.now() when the prompt was sent, and when it finished. */
+  started: number;
+  ended: number | null;
+  state: "working" | "waiting" | "done";
+  seen: Step[];
+  now: Step | null;
+  /** The last few things it did: [step, what]. */
+  log: { step: Step | null; what: string }[];
+  /** Claude's answer, once done. */
+  reply: string;
+  /** The last thing worth showing: an edit, a command, a read. */
+  snippet: Snippet | null;
+}
+
+function stepOf(tool: string): Step | null {
+  if (/^(Read|Grep|Glob|LS|WebFetch|WebSearch|NotebookRead)$/.test(tool)) return "read";
+  if (/^(Edit|MultiEdit|Write|NotebookEdit)$/.test(tool)) return "edit";
+  if (/^(Bash|PowerShell|BashOutput|Monitor)$/.test(tool)) return "test";
+  return null;
+}
+
+let progress: Progress | null = null;
+const progressFns = new Set<(p: Progress | null) => void>();
+
+export function claudeProgress(): Progress | null {
+  return progress;
+}
+
+export function onClaudeProgress(fn: (p: Progress | null) => void): () => void {
+  progressFns.add(fn);
+  return () => progressFns.delete(fn);
+}
+
+function track(ev: ClaudeEvent) {
+  const fresh = (): Progress => ({
+    session: ev.session, project: ev.project, started: Date.now(), ended: null,
+    state: "working", seen: [], now: null, log: [], reply: "", snippet: null,
+  });
+  let p = progress;
+  if (ev.kind === "working") p = fresh();
+  else if (!p || p.session !== ev.session) {
+    // Joined halfway (Komori started after the prompt): follow it from here.
+    if (ev.kind !== "tool") return;
+    p = fresh();
+  }
+  if (ev.kind === "tool") {
+    const step = stepOf(ev.tool ?? "");
+    if (step) {
+      p.now = step;
+      if (!p.seen.includes(step)) p.seen = [...p.seen, step];
+    }
+    p.state = "working";
+    p.log = [...p.log, { step, what: ev.message || ev.tool || "" }].slice(-4);
+    if (ev.snippet) p.snippet = ev.snippet;
+  } else if (ev.kind === "done") {
+    p.state = "done";
+    p.ended = Date.now();
+    p.now = "done";
+    p.seen = [...p.seen.filter((x) => x !== "done"), "done"];
+    p.reply = ev.message;
+  } else if (ev.kind === "question" || ev.kind === "permission" || ev.kind === "waiting") {
+    p.state = "waiting";
+  } else if (ev.kind === "ended" && p.state !== "done") {
+    p.state = "done";
+    p.ended = Date.now();
+  }
+  progress = { ...p };
+  for (const fn of progressFns) fn(progress);
+}
+
 export function handleClaude(ev: ClaudeEvent, host: AlertHost) {
+  track(ev);
+  // A step of the task only feeds the progress page.
+  if (ev.kind === "tool") return;
   const prefs = settings().claude;
   if (ev.kind === "working") {
     working.add(ev.session);
@@ -123,6 +219,7 @@ export function startClaude(host: AlertHost) {
   void on<ClaudeEvent>("claude-event", (ev) => handleClaude(ev, host));
   // In a plain browser, ?claude=done|question|permission shows a pretend notice.
   const demo = !IN_APP ? new URLSearchParams(location.search).get("claude") : null;
+  if (demo === "progress") return demoProgress(host);
   if (demo) {
     window.setTimeout(() => handleClaude({
       kind: demo as ClaudeEvent["kind"],
@@ -136,6 +233,27 @@ export function startClaude(host: AlertHost) {
            { header: "Peinado", question: "¿Y qué peinado?", options: ["Largo", "Coletas"] }]
         : [],
     }, host), 1200);
+  }
+}
+
+/** Browser only (?claude=progress): a pretend task going through its steps. */
+function demoProgress(host: AlertHost) {
+  const base = { session: "demo", project: "tienda-web", message: "", questions: [] };
+  const steps: [number, Partial<ClaudeEvent>][] = [
+    [300, { kind: "working" }],
+    [900, { kind: "tool", tool: "Grep", message: "calcularTotal" }],
+    [1800, { kind: "tool", tool: "Read", message: "carrito.ts", snippet: { kind: "read", file: "carrito.ts", path: "src/carrito.ts" } }],
+    [3200, { kind: "tool", tool: "Edit", message: "carrito.ts", snippet: { kind: "edit", file: "carrito.ts", path: "src/carrito.ts", line: 12,
+      before: ["import { Producto } from './tipos';", "", ""], old: ["const IVA = 0.12;"], new: ["const IVA = 0.15; // desde 2026"],
+      after: ["", "export function total(items: Producto[]) {", "  const suma = items.reduce((s, i) => s + i.precio, 0);", "  return suma * (1 + IVA);"] } }],
+    [4600, { kind: "tool", tool: "Bash", message: "npm test", snippet: { kind: "command", command: ["npm test"], about: "Correr las pruebas" } }],
+  ];
+  // ?hold stops at the edit (to look at it).
+  if (new URLSearchParams(location.search).has("hold")) steps.pop();
+  for (const [at, e] of steps) window.setTimeout(() => handleClaude({ ...base, ...e } as ClaudeEvent, host), at);
+  if (new URLSearchParams(location.search).has("done")) {
+    window.setTimeout(() => handleClaude({ ...base, kind: "done",
+      message: "Listo: el total ahora suma el IVA correctamente y pasan las 48 pruebas." }, host), 6000);
   }
 }
 

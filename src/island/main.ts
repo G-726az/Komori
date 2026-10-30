@@ -5,12 +5,12 @@
 // the panel first and then the window. So nothing invisible ever eats a click.
 
 import "./island.css";
-import { Bridge, IN_APP, on } from "../shared/bridge";
+import { Bridge, IN_APP, on, onDragDrop } from "../shared/bridge";
 import { h, icon, clear } from "../shared/dom";
 import { I } from "../shared/icons";
 import { applyBorder, applyTheme } from "../shared/theme";
 import { applyPerf, loadSettings, onSettings, settings, updateSettings, type ModuleId, type Settings } from "../shared/settings";
-import { MODULES, buildModule, formatTime, type ModuleView } from "./modules";
+import { MODULES, formatTime, type ModuleView } from "./modules";
 import { createPet, wantPet3D } from "./pet";
 import { wantGpu } from "../shared/gpu";
 import { deg, onWeather, skyIcon, startWeather, weather } from "../shared/weather";
@@ -18,14 +18,46 @@ import { media, onMedia, startMedia } from "./media";
 import { alertClosed, showNotice, startClaude, type AlertHost, type Notice } from "./claude";
 import { githubCount, onGithub, startGithub } from "./github";
 import { startReminders } from "./calendar";
+import { albumColor, miniPanel } from "./minimal";
+import { lineNow, lyrics, startLyrics } from "./lyrics";
+import { shelfBusy, shelfDrag, shelfDrop, shelfPending } from "./shelf";
+import { onPulse } from "./beat";
 
 /** Window sizes in logical pixels (island + room for its shadow). */
 const SIZE = {
   closed: { w: 360, h: 66 },
-  open: { w: 800, h: 470 },
+  open: { w: 800, h: 520 },
   /** A Claude notice on the closed island: this wide, as tall as it needs. */
   alertW: 500,
 };
+/** The minimal style: a slimmer pill and one compact size for every tab. */
+const isMini = () => settings().islandStyle === "minimal";
+/** The slim pill, in both styles (34 px plus room for its shadow). */
+const closedH = () => 50;
+/** Notas and Chat can open wider and taller (the arrows in their header). */
+let expanded = false;
+const canExpand = (id: ModuleId) => id === "notes" || id === "chat";
+const wide = () => expanded && canExpand(current);
+const openSize = () => isMini()
+  ? (wide() ? { w: 800, h: 500 } : { w: 680, h: 300 })
+  : (wide() ? { w: 980, h: 660 } : SIZE.open);
+
+/** Open: grow into the wide island, or back (the window first when growing). */
+let fitMine = 0;
+function fitOpen() {
+  const want = wide();
+  if (want === island.classList.contains("wide")) return;
+  const mine = ++fitMine;
+  if (want) {
+    void placeWindow(openSize().w, openSize().h).then(() => mine === fitMine && island.classList.add("wide"));
+  } else {
+    island.classList.remove("wide");
+    window.setTimeout(() => {
+      if (mine === fitMine && island.classList.contains("open")) void placeWindow(openSize().w, openSize().h);
+    }, MORPH_MS);
+  }
+}
+
 /** Matches the CSS transition on #island. */
 const MORPH_MS = 280;
 
@@ -38,28 +70,52 @@ const closedW = () => pillW + 20;
 /** Room for the curved corners of the "glued to the top" shape. */
 const NOTCH_EXTRA = 28;
 
-/** Sizes the window for an island of this size (plus the shape's extras). */
+/** How big the island is drawn (Apariencia → Tamaño): the page is zoomed by Rust. */
+let zoom = 1;
+let zoomFor = "";
+
+/** Sizes the window for an island of this size (plus the shape's extras), zoomed. */
 function placeWindow(w: number, h: number) {
   const notch = settings().islandShape === "notch";
-  return Bridge.placeIsland(w + (notch ? NOTCH_EXTRA : 0), h);
+  return Bridge.placeIsland(Math.ceil((w + (notch ? NOTCH_EXTRA : 0)) * zoom), Math.ceil(h * zoom));
+}
+
+/** Apply the chosen size (only when it changed), then fit the window again. */
+async function applyZoom() {
+  const want = settings().islandScale ?? "auto";
+  if (want === zoomFor) return;
+  zoomFor = want;
+  if (IN_APP) zoom = (await Bridge.islandZoom(want)) ?? 1;
+  else {
+    // A browser has no window to zoom: scale the page itself (auto = 100 %).
+    zoom = want === "auto" ? 1 : Number(want) || 1;
+    document.body.style.zoom = String(zoom);
+  }
+  await placeAgain();
 }
 
 /** The window again, for whatever the island shows now (after a shape change). */
 function placeAgain() {
-  if (island.classList.contains("open")) return placeWindow(SIZE.open.w, SIZE.open.h);
+  if (island.classList.contains("open")) return placeWindow(openSize().w, openSize().h);
   if (island.classList.contains("alerting")) {
     const h_ = parseFloat(island.style.getPropertyValue("--alert-h")) || 140;
     return placeWindow(SIZE.alertW, h_ + 20);
   }
-  return placeWindow(closedW(), SIZE.closed.h);
+  return placeWindow(closedW(), closedH());
 }
 
 let shape = "";
 function applyShape() {
-  const next = settings().islandShape ?? "float";
+  const next = `${settings().islandShape ?? "float"}|${settings().islandStyle ?? "minimal"}`;
   if (next === shape) return;
+  const styleChanged = shape.split("|")[1] !== next.split("|")[1];
   shape = next;
-  island.classList.toggle("notch", next === "notch");
+  island.classList.toggle("notch", settings().islandShape === "notch");
+  island.classList.toggle("minimal", isMini());
+  // Switching style while open: rebuild what the panel shows.
+  if (styleChanged && island.classList.contains("open")) show(current);
+  pillSong = "";
+  drawPillMusic();
   void placeAgain();
 }
 
@@ -88,45 +144,27 @@ const pill = h("button", { class: "pill", "aria-label": "Abrir Komori" },
   h("span", { class: "pill-dot" }),
 );
 
-const tabs = h("nav", { class: "tabs" });
-const headTime = h("span", { class: "head-time" });
-const gear = h("button", { class: "head-btn", title: "Ajustes", onclick: () => void Bridge.openSettings() }, icon(I.gear, 15));
-const closeBtn = h("button", { class: "head-btn", title: "Cerrar", onclick: () => close() }, icon(I.close, 15));
-const head = h("header", { class: "head" },
-  h("button", { class: "head-pet", title: "¡Hola!", onclick: () => pet.poke() }, pet.clone(30)),
-  tabs,
-  h("span", { class: "spacer" }),
-  headTime,
-  gear,
-  closeBtn,
-);
 const body = h("main", { class: "body" });
-const panel = h("div", { class: "panel" }, head, body);
+const panel = h("div", { class: "panel" }, body);
 const alertBox = h("div", { class: "alert" });
 const island = h("div", { id: "island" }, pill, panel, alertBox);
 root.append(island);
 
-function drawTabs() {
-  clear(tabs);
-  for (const id of settings().modules) {
-    const m = MODULES[id];
-    if (!m) continue;
-    const b = h("button", {
-      class: id === current ? "tab on" : "tab",
-      title: m.label,
-      onclick: () => show(id),
-    }, icon(m.icon, 16));
-    tabs.append(b);
-  }
-}
+/** The pet's small copy in the header (one, reused). */
+let miniFace: HTMLElement | null = null;
 
 function show(id: ModuleId) {
   current = id;
-  view = buildModule(id, show, pet);
+  if (island.classList.contains("open")) fitOpen();
+  // Header, the tab and the dock (the minimal style uses its compact pages).
+  view = miniPanel(id, show, pet, (miniFace ??= pet.clone(26)), {
+    compact: isMini(),
+    close,
+    expand: canExpand(id) ? { on: expanded, toggle: () => { expanded = !expanded; show(current); } } : undefined,
+  });
   clear(body);
   body.append(view.el);
   view.tick?.(new Date());
-  drawTabs();
 }
 
 // ── Open / close ──────────────────────────────────────────────────────────────
@@ -141,8 +179,9 @@ async function open(by: OpenedBy) {
   }
   busy = true;
   openedBy = by;
-  await placeWindow(SIZE.open.w, SIZE.open.h);
+  await placeWindow(openSize().w, openSize().h);
   requestAnimationFrame(() => {
+    island.classList.toggle("wide", wide());
     island.classList.add("open");
     show(current);
     pet.happy();
@@ -154,7 +193,8 @@ function close() {
   if (!island.classList.contains("open") || busy) return;
   busy = true;
   openedBy = null;
-  island.classList.remove("open");
+  fitMine++;
+  island.classList.remove("open", "wide");
   window.setTimeout(async () => {
     // The panel is out of sight: let it go, so nothing in it keeps working
     // (the weather ring, a big pet, the stats). It is built again on open.
@@ -162,7 +202,7 @@ function close() {
       clear(body);
       view = null;
     }
-    await placeWindow(closedW(), SIZE.closed.h);
+    await placeWindow(closedW(), closedH());
     busy = false;
   }, MORPH_MS);
 }
@@ -216,7 +256,8 @@ window.addEventListener("keydown", (e) => {
 });
 // Opened by click: clicking anywhere else closes it.
 window.addEventListener("blur", () => {
-  if (openedBy === "click") close();
+  // Not while a file is on its way (a pending question waits for the next open).
+  if (openedBy === "click" && !shelfBusy()) close();
 });
 
 // ── Claude notices ────────────────────────────────────────────────────────────
@@ -228,6 +269,8 @@ alertBox.addEventListener("mouseleave", () => (alertHovered = false));
 
 const host: AlertHost = {
   async show(card, sticky) {
+    // The Claude Code tab already shows it: no card on top of it.
+    if (!sticky && current === "claude" && island.classList.contains("open") && card.dataset.claude === "done") return;
     window.clearTimeout(alertTimer);
     alertBox.replaceChildren(card);
     if (!island.classList.contains("open")) {
@@ -253,7 +296,7 @@ const host: AlertHost = {
     window.setTimeout(async () => {
       alertBox.replaceChildren();
       if (!island.classList.contains("open") && !island.classList.contains("alerting")) {
-        await placeWindow(closedW(), SIZE.closed.h);
+        await placeWindow(closedW(), closedH());
       }
     }, MORPH_MS);
   },
@@ -266,13 +309,37 @@ const host: AlertHost = {
   },
 };
 
+// ── Hello ─────────────────────────────────────────────────────────────────────
+
+/** When Komori starts: the island opens into a little card and the pet says hi. */
+function welcome() {
+  if (island.classList.contains("open") || island.classList.contains("alerting")) return;
+  const now = new Date();
+  const hour = now.getHours();
+  const hello = hour < 5 ? "¡Qué desvelo!" : hour < 12 ? "¡Buenos días!" : hour < 19 ? "¡Buenas tardes!" : "¡Buenas noches!";
+  const w = weather();
+  const date = now.toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" });
+  const card = h("div", { class: "welcome-card" },
+    h("span", { class: "welcome-pet" }, pet.clone(64)),
+    h("div", { class: "welcome-text" },
+      h("b", { text: hello }),
+      h("span", { text: w ? `${date} · ${deg(w.temp)}` : date }),
+      h("span", { class: "welcome-small", text: "Komori está listo" }),
+    ),
+  );
+  void host.show(card, true);
+  pet.happy();
+  window.setTimeout(() => {
+    if (alertBox.contains(card)) host.hide();
+  }, 3400);
+}
+
 // ── Clock ─────────────────────────────────────────────────────────────────────
 
 function tick() {
   const now = new Date();
   pillTime.textContent = formatTime(now);
   fitPill();
-  headTime.textContent = formatTime(now);
   if (island.classList.contains("open")) view?.tick?.(now);
 }
 
@@ -285,18 +352,64 @@ function drawPillSky() {
   pillSky.append(skyIcon(w.code, w.day, 18), h("span", { text: deg(w.temp) }));
 }
 
-/** A little equalizer and the song's name while something plays. */
+/** A little equalizer and the song's name while something plays — or the line being sung. */
 let pillSong = "";
 function drawPillMusic() {
-  requestAnimationFrame(fitPill);
   const m = media();
   const song = m?.playing && settings().musicInPill ? [m.title, m.artist].filter(Boolean).join(" · ") : "";
-  if (song === pillSong) return;
-  pillSong = song;
+  const line = song && settings().lyrics?.inPill !== false ? lineNow() : "";
+  const key = line ? `♪${line}` : song;
+  if (key === pillSong) return;
+  pillSong = key;
+  requestAnimationFrame(fitPill);
   pillMusic.replaceChildren();
+  followSound(null);
+  tintPill(line && m?.cover ? m.cover : "");
   if (!song) return;
-  pillMusic.append(h("span", { class: "eq" }, h("i", {}), h("i", {}), h("i", {})), h("span", { class: "pill-song", text: song }));
   pillMusic.title = song;
+  if (line) {
+    pillMusic.append(h("span", { class: "pill-lyric" }, icon(I.music, 13), h("span", { text: line })));
+    return;
+  }
+  const eq = h("span", { class: "eq" }, h("i", {}), h("i", {}), h("i", {}));
+  pillMusic.append(eq, h("span", { class: "pill-song", text: song }));
+  followSound(eq);
+}
+
+/** While a sung line shows, the minimal pill takes the colours of the cover. */
+let tintFor = "";
+function tintPill(cover: string) {
+  if (cover === tintFor) return;
+  tintFor = cover;
+  if (!cover) return island.classList.remove("lyric-tint");
+  void albumColor(cover).then((c) => {
+    if (tintFor !== cover) return;
+    island.style.setProperty("--album", c);
+    island.classList.add("lyric-tint");
+  });
+}
+
+/** The equalizer follows the real sound level (if wanted), each bar a little differently. */
+let offEq: (() => void) | null = null;
+function followSound(eq: HTMLElement | null) {
+  offEq?.();
+  offEq = null;
+  if (!eq || settings().perf?.eq === false) return;
+  const bars = [...eq.children] as HTMLElement[];
+  const mix = [0.85, 1.15, 0.7];
+  offEq = onPulse((p) => {
+    if (!eq.isConnected) {
+      offEq?.();
+      offEq = null;
+      return;
+    }
+    if (island.classList.contains("open")) return;
+    eq.classList.add("live");
+    bars.forEach((b, i) => {
+      const v = Math.max(0.18, Math.min(1, p.level * mix[i] * 1.6 + p.beat * 0.35 * (i === 1 ? 1 : 0.6)));
+      b.style.transform = `scaleY(${v.toFixed(3)})`;
+    });
+  });
 }
 
 /** Unread GitHub notifications on the closed island. */
@@ -315,7 +428,8 @@ function fitPill() {
     if (el === pillMusic) {
       // The song's whole name (up to a limit), not the room it has right now.
       const song = el.querySelector<HTMLElement>(".pill-song");
-      w += 13 + 7 + Math.min(song?.scrollWidth ?? 0, 200);
+      const lyric = el.querySelector<HTMLElement>(".pill-lyric");
+      w += lyric ? Math.min(lyric.scrollWidth, 360) + 4 : 13 + 7 + Math.min(song?.scrollWidth ?? 0, 200);
     } else {
       w += el.offsetWidth;
     }
@@ -330,12 +444,12 @@ function fitPill() {
   const mine = ++fitting;
   if (growing) {
     // Make room first, then let the island stretch into it.
-    void placeWindow(closedW(), SIZE.closed.h).then(() => mine === fitting && apply());
+    void placeWindow(closedW(), closedH()).then(() => mine === fitting && apply());
   } else {
     apply();
     window.setTimeout(() => {
       if (mine === fitting && !island.classList.contains("open") && !island.classList.contains("alerting")) {
-        void placeWindow(closedW(), SIZE.closed.h);
+        void placeWindow(closedW(), closedH());
       }
     }, MORPH_MS);
   }
@@ -371,6 +485,7 @@ async function main() {
   applyBorder(s.islandBorder, s.accent);
   applyPerf(s);
   applyShape();
+  await applyZoom();
   pet.setKind(s.pet, s.petColors?.[s.pet], s.petStyles?.[s.pet]);
   pet.setOutfit(s.outfits?.[s.pet]);
   current = s.modules[0] ?? "home";
@@ -382,6 +497,7 @@ async function main() {
     applyBorder(next.islandBorder, next.accent);
     applyPerf(next);
     applyShape();
+    void applyZoom();
     pet.setKind(next.pet, next.petColors?.[next.pet], next.petStyles?.[next.pet]);
     pet.setOutfit(next.outfits?.[next.pet]);
     drawPillSky();
@@ -393,6 +509,11 @@ async function main() {
   onWeather(drawPillSky);
   onMedia(drawPillMusic);
   startMedia();
+  startLyrics();
+  // The sung line on the closed island follows the song closely (only while there are synced lyrics).
+  window.setInterval(() => {
+    if (lyrics()?.synced && media()?.playing && !island.classList.contains("open")) drawPillMusic();
+  }, 300);
   startClaude(host);
   // Komori's own notices (timer finished, an event about to start…).
   window.addEventListener("komori-notice", (e) => showNotice((e as CustomEvent<Notice>).detail, host));
@@ -404,6 +525,36 @@ async function main() {
   // A while after start, a quiet look for a new version (never installs anything).
   window.setTimeout(() => void lookForUpdate(), 15_000);
   void on("open-island", () => void open("click"));
+  // Files dragged onto the island: open on the shelf and ask what to do with them.
+  let openedForDrop = false;
+  let dragGone: number | undefined;
+  void onDragDrop((e) => {
+    if (e.type === "enter") {
+      // Back in (the island growing under the cursor can look like leaving).
+      window.clearTimeout(dragGone);
+      shelfDrag(true);
+      if (!island.classList.contains("open")) {
+        openedForDrop = true;
+        current = "shelf";
+        void open("click");
+      } else if (current !== "shelf") show("shelf");
+    } else if (e.type === "drop") {
+      window.clearTimeout(dragGone);
+      openedForDrop = false;
+      shelfDrop(e.paths);
+      if (current !== "shelf") show("shelf");
+    } else if (e.type === "leave") {
+      window.clearTimeout(dragGone);
+      dragGone = window.setTimeout(() => {
+        shelfDrag(false);
+        // Only passing by: fold away again.
+        if (openedForDrop && !shelfPending()) {
+          openedForDrop = false;
+          close();
+        }
+      }, 700);
+    }
+  });
   // The mouse has been still for a while (or moved again): rest or wake up.
   void on<boolean>("idle-changed", (resting) => pet.setSleeping(resting));
   // Now and then, a little coffee break.
@@ -413,8 +564,11 @@ async function main() {
 
   tick();
   window.setInterval(tick, 1000);
-  await placeWindow(closedW(), SIZE.closed.h);
+  await placeWindow(closedW(), closedH());
   await Bridge.islandReady();
+  // A hello once it is on screen (in a browser only with ?welcome).
+  const greet = IN_APP ? settings().welcome !== false : new URLSearchParams(location.search).has("welcome");
+  if (greet) window.setTimeout(welcome, 900);
   if (!IN_APP) {
     document.body.classList.add("browser");
     await browserShot();
@@ -427,6 +581,8 @@ async function main() {
  */
 async function browserShot() {
   const q = new URLSearchParams(location.search);
+  // ?bare: no desk behind the island (transparent captures for the promo video).
+  if (q.has("bare")) document.body.style.background = "transparent";
   try {
     const patch = q.get("set");
     if (patch) await updateSettings(JSON.parse(patch));

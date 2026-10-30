@@ -6,6 +6,7 @@ import { I } from "../shared/icons";
 import { control, media, onMedia, seek, type Media } from "./media";
 import { settings } from "../shared/settings";
 import { timeline } from "./timeline";
+import { onPulse } from "./beat";
 
 export const PLAY = "M8 5.2v13.6a1 1 0 0 0 1.5.86l11-6.8a1 1 0 0 0 0-1.72l-11-6.8A1 1 0 0 0 8 5.2z";
 export const PAUSE = "M7 4.5h3.2a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1zm6.8 0H17a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-3.2a1 1 0 0 1-1-1v-13a1 1 0 0 1 1-1z";
@@ -20,6 +21,21 @@ export function clock(secs: number): string {
   return h_ ? `${h_}:${String(m).padStart(2, "0")}:${r}` : `${m}:${r}`;
 }
 
+/**
+ * The art box: the cover, the cover with its record sliding out, or the record
+ * alone with the cover as its label (Ajustes → Música → Carátula). The record
+ * turns while music plays.
+ */
+export function artBox(m: Media): HTMLElement {
+  const look = settings().music?.art ?? "sleeve";
+  const sleeve = m.cover
+    ? h("img", { class: "music-sleeve", src: m.cover, alt: "" })
+    : h("div", { class: "music-sleeve none" }, icon(I.music, 54));
+  const record = h("div", { class: "music-record" },
+    h("div", { class: "music-label", style: m.cover ? { backgroundImage: `url("${m.cover}")` } : {} }));
+  return h("div", { class: `music-cover${m.playing ? " playing" : ""}`, "data-art": look }, record, sleeve);
+}
+
 export function musicModule() {
   const el = h("section", { class: "module music" });
   // Nothing drawn yet: even "nothing playing" must be drawn once.
@@ -28,9 +44,12 @@ export function musicModule() {
   let line: ReturnType<typeof timeline> | null = null;
   let at: HTMLElement | null = null;
   let playBtn: HTMLButtonElement | null = null;
+  let offPulse: (() => void) | null = null;
 
   function draw(m: Media | null) {
     el.replaceChildren();
+    offPulse?.();
+    offPulse = null;
     line = null;
     at = playBtn = null;
     if (!m) {
@@ -43,16 +62,22 @@ export function musicModule() {
     }
     // The cover, the cover with its record sliding out, or the record alone with
     // the cover as its label. The record turns while music plays.
-    const look = settings().music?.art ?? "sleeve";
-    const sleeve = m.cover
-      ? h("img", { class: "music-sleeve", src: m.cover, alt: "" })
-      : h("div", { class: "music-sleeve none" }, icon(I.music, 54));
-    const record = h("div", { class: "music-record" },
-      h("div", { class: "music-label", style: m.cover ? { backgroundImage: `url("${m.cover}")` } : {} }));
-    const cover = h("div", { class: `music-cover${m.playing ? " playing" : ""}`, "data-art": look }, record, sleeve);
+    const cover = artBox(m);
     const backdrop = m.cover ? h("div", { class: "music-backdrop", style: { backgroundImage: `url("${m.cover}")` } }) : null;
 
     line = timeline(settings().music?.timeline ?? "clasica");
+    if (m.playing) {
+      const l = line;
+      offPulse = onPulse((p) => {
+        // Gone with the panel: let go.
+        if (!el.isConnected) {
+          offPulse?.();
+          offPulse = null;
+          return;
+        }
+        l.pulse(p.beat, p.level);
+      });
+    }
     at = h("span", {});
     const bar = h("div", { class: `music-bar${m.canSeek ? " seekable" : ""}${m.playing ? " playing" : ""}` }, line.el);
     if (m.canSeek) {

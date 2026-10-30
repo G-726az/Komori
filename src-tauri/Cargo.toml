@@ -1,6 +1,6 @@
 [package]
 name = "komori"
-version = "0.1.0"
+version = "0.2.0"
 description = "Komori — a little island at the top of your screen"
 authors = ["Komori contributors"]
 license = "MIT"
@@ -26,6 +26,8 @@ tauri-plugin-dialog = "2"
 ureq = { version = "2", features = ["json"] }
 
 [target.'cfg(windows)'.dependencies]
+webview2-com = "0.39"
+wv2-core = { package = "windows-core", version = "0.62" }
 windows = { version = "0.61", features = [
   "Win32_Foundation",
   "Win32_UI_WindowsAndMessaging",
@@ -37,6 +39,10 @@ windows = { version = "0.61", features = [
   "Win32_UI_Shell",
   "Win32_System_Diagnostics_ToolHelp",
   "Win32_Security_Credentials",
+  "Win32_Media_Audio",
+  "Win32_Media_Audio_Endpoints",
+  "Win32_System_Com_StructuredStorage",
+  "Win32_System_Variant",
   "Foundation",
   "Media_Control",
   "Storage_Streams",

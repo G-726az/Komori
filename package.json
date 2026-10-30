@@ -1,7 +1,7 @@
 {
   "name": "komori",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Komori — a little island at the top of your screen, looked after by a cat, a bat and Bou.",
   "license": "MIT",

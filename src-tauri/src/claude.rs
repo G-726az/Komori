@@ -34,8 +34,12 @@ fn door_path() -> PathBuf {
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClaudeEvent {
-    /// "working", "done", "question", "permission", "waiting", "ended"
+    /// "working", "tool", "done", "question", "permission", "waiting", "ended"
     pub kind: String,
+    /// For "tool": which tool Claude is about to use (Read, Edit, Bash…).
+    pub tool: String,
+    /// For "tool": what it works on, to show it (a change to a file, a command).
+    pub snippet: Option<Value>,
     pub session: String,
     /// The project folder's name.
     pub project: String,
@@ -150,6 +154,10 @@ fn token() -> String {
 }
 
 pub fn start(app: AppHandle) {
+    // Registered by an older Komori (or from another folder): bring the entries up to date.
+    if claude_hooks_status() {
+        let _ = claude_hooks_set(true);
+    }
     let Ok(listener) = TcpListener::bind(("127.0.0.1", 0)) else { return };
     let Ok(port) = listener.local_addr().map(|a| a.port()) else { return };
     let door = Door { port, token: token() };
@@ -226,7 +234,7 @@ fn handle(app: &AppHandle, p: Value) {
         }
     }
 
-    let mut ev = ClaudeEvent { kind: String::new(), session, project, message: String::new(), questions: vec![] };
+    let mut ev = ClaudeEvent { kind: String::new(), tool: String::new(), snippet: None, session, project, message: String::new(), questions: vec![] };
     match event.as_str() {
         "UserPromptSubmit" => ev.kind = "working".into(),
         "Stop" => {
@@ -261,9 +269,88 @@ fn handle(app: &AppHandle, p: Value) {
                     .collect();
             }
         }
+        "PreToolUse" => {
+            // Any other tool: a step of the task (for the progress page).
+            ev.kind = "tool".into();
+            ev.tool = text(&p, "tool_name");
+            ev.message = tool_detail(&p);
+            ev.snippet = snippet(&ev.tool, &p);
+        }
         _ => return,
     }
     let _ = app.emit_to(island::LABEL, "claude-event", ev);
+}
+
+/// At most `n` lines of `text`, each cut to a readable length.
+fn lines(text: &str, n: usize) -> Vec<String> {
+    text.lines()
+        .take(n)
+        .map(|l| {
+            let l = l.replace('\t', "  ");
+            if l.chars().count() > 140 { format!("{}…", l.chars().take(139).collect::<String>()) } else { l }
+        })
+        .collect()
+}
+
+/// What the page shows for a step: the change to a file (with the line where it
+/// starts, read from the file before it changes) or the command being run.
+fn snippet(tool: &str, p: &Value) -> Option<Value> {
+    let input = p.get("tool_input")?;
+    let path = text(input, "file_path");
+    let file = path.rsplit(['\\', '/']).next().unwrap_or("").to_string();
+    let rel = {
+        let cwd = text(p, "cwd").replace('\\', "/");
+        let full = path.replace('\\', "/");
+        full.strip_prefix(&format!("{}/", cwd.trim_end_matches('/'))).map(str::to_string).unwrap_or(full)
+    };
+    match tool {
+        "Edit" | "MultiEdit" => {
+            let (old, new) = if tool == "Edit" {
+                (text(input, "old_string"), text(input, "new_string"))
+            } else {
+                let first = input.get("edits")?.as_array()?.first()?;
+                (text(first, "old_string"), text(first, "new_string"))
+            };
+            // Where the change starts, counted in the file as it is now, and a few
+            // unchanged lines around it for context.
+            let body = std::fs::read_to_string(&path).unwrap_or_default();
+            let (line, before, after) = match body.find(&old).filter(|_| !old.is_empty()) {
+                Some(at) => {
+                    let start = body[..at].matches('\n').count() + 1;
+                    let all: Vec<&str> = body.lines().collect();
+                    let first = start.saturating_sub(3).max(1);
+                    let before = lines(&all[first - 1..start - 1].join("\n"), 3);
+                    let end = (start - 1 + old.lines().count().max(1)).min(all.len());
+                    let after = lines(&all[end..(end + 4).min(all.len())].join("\n"), 4);
+                    (start, before, after)
+                }
+                None => (0, vec![], vec![]),
+            };
+            Some(json!({ "kind": "edit", "file": file, "path": rel, "line": line,
+                "before": before, "old": lines(&old, 10), "new": lines(&new, 10), "after": after }))
+        }
+        "Write" => Some(json!({ "kind": "edit", "file": file, "path": rel, "line": 1, "old": [], "new": lines(&text(input, "content"), 10) })),
+        "Bash" | "PowerShell" => Some(json!({ "kind": "command", "command": lines(&text(input, "command"), 6), "about": text(input, "description") })),
+        "Read" => Some(json!({ "kind": "read", "file": file, "path": rel })),
+        _ => None,
+    }
+}
+
+/// A few words about what the tool works on: a file's name, a search, a command.
+fn tool_detail(p: &Value) -> String {
+    let input = p.get("tool_input").cloned().unwrap_or(Value::Null);
+    let file = ["file_path", "notebook_path", "path"].iter().map(|k| text(&input, k)).find(|x| !x.is_empty());
+    let raw = if let Some(f) = file {
+        f.trim_end_matches(['\\', '/']).rsplit(['\\', '/']).next().unwrap_or("").to_string()
+    } else {
+        ["description", "pattern", "command", "query", "url"].iter().map(|k| text(&input, k)).find(|x| !x.is_empty()).unwrap_or_default()
+    };
+    let one: String = raw.split_whitespace().collect::<Vec<_>>().join(" ");
+    if one.chars().count() > 70 {
+        format!("{}…", one.chars().take(69).collect::<String>())
+    } else {
+        one
+    }
 }
 
 /// The start of Claude's last written answer, from the session transcript.
@@ -365,6 +452,8 @@ fn focus_pid(_pid: u32) -> bool {
 pub fn claude_test(app: AppHandle, kind: String) {
     let ev = ClaudeEvent {
         kind: kind.clone(),
+        tool: String::new(),
+        snippet: None,
         session: String::new(),
         project: "Komori".into(),
         message: if kind == "done" {
@@ -391,7 +480,8 @@ const EVENTS: [(&str, Option<&str>); 5] = [
     ("UserPromptSubmit", None),
     ("Stop", None),
     ("Notification", None),
-    ("PreToolUse", Some("AskUserQuestion")),
+    // Every tool (not only AskUserQuestion): the progress page follows the steps.
+    ("PreToolUse", None),
     ("SessionEnd", None),
 ];
 

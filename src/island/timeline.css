@@ -98,12 +98,90 @@
 }
 
 /* While playing, the glitch line shivers a little. */
-.music-bar.playing .tl-glitch .tl-red {
+.music-bar.playing .tl-glitch .tl-red,
+.mm-bar.playing .tl-glitch .tl-red {
   animation: tl-shiver 260ms steps(2, jump-none) infinite;
 }
 
 @keyframes tl-shiver {
   50% {
     translate: 1.5px -1px;
+  }
+}
+
+/* ── Moving with the music (--beat 0–1 jumps on each hit, --lv is the level) ── */
+
+.tl {
+  --beat: 0;
+  --lv: 0;
+}
+
+/* Every look: the thumb gives a little bounce. */
+.tl .tl-thumb {
+  scale: calc(1 + var(--beat) * 0.45);
+  transition: scale 80ms linear;
+}
+
+/* Clásica: the played line swells. */
+.tl-clasica .tl-played .tl-line {
+  stroke-width: calc(2px + var(--beat) * 2.5px);
+}
+
+/* Latido: a heartbeat trace jumps up at the thumb. */
+.tl-spike {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 34px;
+  height: 20px;
+  translate: -50% 0;
+  overflow: visible;
+  opacity: calc(var(--beat) * 1.4);
+  transform: scaleY(calc(0.2 + var(--beat) * 1.1));
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+
+.tl-spike .tl-line {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.tl-latido .tl-played .tl-line {
+  stroke-width: calc(2px + var(--beat) * 1.5px);
+}
+
+/* Glitch: the red line jumps further off on a hit. */
+.tl-glitch .tl-played .tl-red {
+  translate: calc(var(--beat) * 3px) calc(var(--beat) * -2.5px);
+}
+
+/* Regla: the ticks stretch. */
+.tl-regla .tl-played .tl-tick {
+  stroke-width: calc(1.5px + var(--beat) * 2px);
+}
+
+.tl-regla .tl-svg {
+  transform: scaleY(calc(1 + var(--beat) * 0.6));
+}
+
+/* Guiones: the dashes march along with the sound. */
+.tl-guiones .tl-played .tl-dash {
+  stroke-dashoffset: calc(var(--lv) * -28);
+}
+
+/* Flecha: the heart beats. */
+.tl-flecha .tl-thumb.heart {
+  scale: calc(1 + var(--beat) * 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tl .tl-thumb,
+  .tl-flecha .tl-thumb.heart {
+    scale: 1;
+  }
+
+  .tl-spike {
+    display: none;
   }
 }

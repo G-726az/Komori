@@ -120,11 +120,25 @@ export function timeline(style: TimelineStyle) {
     thumb.append(heart);
     thumb.classList.add("heart");
   }
+  if (style === "latido") {
+    // A little heartbeat trace that jumps up at the thumb on each hit.
+    const beat = svg("svg", { viewBox: "0 0 40 24", class: "tl-spike" });
+    beat.append(svg("path", { d: "M0 12H12L15 5L19 20L23 2L26 12H40", class: "tl-line" }));
+    thumb.append(beat);
+  }
   root.append(art, thumb);
 
   let last = -1;
+  let lastBeat = -1;
   return {
     el: root,
+    /** Move with the music: `beat` 0–1 (a hit, fading), `level` 0–1 (the sound now). */
+    pulse(beat: number, level: number) {
+      if (Math.abs(beat - lastBeat) < 0.01 && beat > 0.01) return;
+      lastBeat = beat;
+      root.style.setProperty("--beat", beat.toFixed(3));
+      root.style.setProperty("--lv", level.toFixed(3));
+    },
     set(ratio: number) {
       const r = Math.max(0, Math.min(1, ratio));
       if (Math.abs(r - last) < 0.0005) return;

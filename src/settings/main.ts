@@ -27,22 +27,24 @@ import { petSound, type PetSound } from "../island/sfx";
 import { detectGpu, wantGpu, type GpuMode } from "../shared/gpu";
 import type { Release } from "../shared/bridge";
 
-type SectionId = "home" | "look" | "pet" | "wardrobe" | "island" | "motion" | "calendar" | "apps" | "notes" | "ai" | "github" | "system" | "about";
+type SectionId = "home" | "look" | "pet" | "wardrobe" | "island" | "music" | "motion" | "calendar" | "apps" | "notes" | "ai" | "claude" | "github" | "system" | "about";
 
 /** A speedometer, for the motion and performance section. */
 const GAUGE = "M12 4a10 10 0 0 0-8.66 15h17.32A10 10 0 0 0 12 4zm0 2a8 8 0 0 1 7.4 11H4.6A8 8 0 0 1 12 6zm4.2 2.4-5 5.1a1.6 1.6 0 1 0 2.3 2.2l3.6-6.3-.9-1zM6.5 13h2v-1.6h-2V13zm9 0h2v-1.6h-2V13zM11.2 8.5h1.6v-2h-1.6v2z";
 
 const SECTIONS: { id: SectionId; label: string; hint: string; icon: string }[] = [
   { id: "home", label: "Inicio", hint: "Qué tarjetas ves al abrir la isla y dónde.", icon: I.home },
-  { id: "look", label: "Apariencia", hint: "Tema y color de acento.", icon: I.palette },
+  { id: "look", label: "Apariencia", hint: "Estilo, tamaño y forma de la isla, tema y colores.", icon: I.palette },
   { id: "pet", label: "Mascota", hint: "Quién vive en tu isla.", icon: I.paw },
   { id: "wardrobe", label: "Guardarropa", hint: "Accesorios para cada mascota.", icon: I.shirt },
-  { id: "island", label: "Isla", hint: "Cómo se abre, qué muestra y cuándo descansa la mascota.", icon: I.island },
+  { id: "island", label: "Isla", hint: "Cómo se abre y qué pestañas tiene.", icon: I.island },
+  { id: "music", label: "Música", hint: "Lo que suena: la canción en la isla, la carátula, las letras y la línea de tiempo.", icon: I.music },
   { id: "motion", label: "Animaciones y 3D", hint: "Qué se mueve y qué es 3D. Apaga lo que no necesites y la laptop trabaja menos.", icon: GAUGE },
   { id: "calendar", label: "Calendario y clima", hint: "Dónde mirar el clima y cómo se ve el calendario.", icon: I.cloud },
   { id: "apps", label: "Apps", hint: "Tus accesos rápidos.", icon: I.grid },
   { id: "notes", label: "Notas", hint: "Notas rápidas guardadas como .txt.", icon: I.note },
   { id: "ai", label: "IA", hint: "El chat: Claude, otras IA o un modelo local.", icon: I.sparkle },
+  { id: "claude", label: "Claude Code", hint: "Los avisos y los pasos de Claude Code en la isla.", icon: I.chat },
   { id: "github", label: "GitHub", hint: "Tus notificaciones y pull requests en la isla.", icon: BRANCH },
   { id: "system", label: "Sistema", hint: "Medidores y arranque con Windows.", icon: I.monitor },
   { id: "about", label: "Acerca de", hint: "Versión, licencia y dónde guarda sus archivos.", icon: I.info },
@@ -125,6 +127,16 @@ function lookSection(): Node[] {
   accents.append(custom);
   return [
     card("Tema", "El fondo, las tarjetas y el texto de la isla. Los temas claros llevan un borde oscuro para resaltar.", themes),
+    card("Estilo de la isla", "Minimalista: negra, compacta y del mismo tamaño en cada pestaña. Completa: más grande y con los colores de tu tema, con tarjetas en Inicio y el editor en Claude Code.",
+      seg([{ value: "minimal", label: "Minimalista" }, { value: "full", label: "Completa" }], settings().islandStyle ?? "minimal", (v) => set("islandStyle", v)),
+    ),
+    card("Tamaño y forma", null,
+      row("Tamaño de la isla", "Automático elige según tu pantalla: 100 % en laptops, más grande en monitores anchos.",
+        seg([{ value: "auto", label: "Automático" }, { value: "1", label: "100 %" }, { value: "1.25", label: "125 %" }],
+          settings().islandScale ?? "auto", (v) => set("islandScale", v))),
+      row("Forma de la isla", "Flotante, o pegada al borde de arriba con dos curvas que la unen a la pantalla.",
+        seg([{ value: "float", label: "Flotante" }, { value: "notch", label: "Pegada arriba" }], settings().islandShape, (v) => set("islandShape", v))),
+    ),
     card("Color de acento", "Pestaña activa, interruptores y detalles.", accents),
     borderCard(),
   ];
@@ -261,6 +273,20 @@ function petSection(): Node[] {
   const volume = h("input", { type: "range", min: "0", max: "1", step: "0.05", value: String(sound.volume), class: "volume" }) as HTMLInputElement;
   volume.addEventListener("change", () => set("sound", { ...(settings().sound ?? DEFAULTS.sound), volume: Number(volume.value) }));
   const hear = (kind: PetSound, label: string) => h("button", { class: "chip", text: label, onclick: () => petSound(kind, true) });
+  {
+    // The pet's rest: after a few minutes without the mouse moving.
+    const s = settings();
+    const minutes = h("input", { type: "number", min: "1", max: "60", value: String(s.idleMinutes) }) as HTMLInputElement;
+    minutes.addEventListener("change", () => {
+      const v = Math.max(1, Math.min(60, Number(minutes.value) || 5));
+      minutes.value = String(v);
+      set("idleMinutes", v);
+    });
+    cards.push(card("Descanso de la mascota", "Si el mouse se queda quieto, la mascota hace su animación de descanso en la isla.",
+      row("Animación de descanso", null, toggle(s.idleAnimation, (v) => set("idleAnimation", v))),
+      row("Minutos sin mover el mouse", null, minutes),
+    ));
+  }
   cards.push(card("Sonidos", null,
     row("Sonidos", "Un «boop» al tocarla, un pío al alegrarse, su «hmph», el mareo, el sorbo de café y el estirón al despertar.",
       toggle(sound.pet, (v) => set("sound", { ...(settings().sound ?? DEFAULTS.sound), pet: v }))),
@@ -348,13 +374,6 @@ function wardrobeSection(): Node[] {
 
 function islandSection(): Node[] {
   const s = settings();
-  const minutes = h("input", { type: "number", min: "1", max: "60", value: String(s.idleMinutes) }) as HTMLInputElement;
-  minutes.addEventListener("change", () => {
-    const v = Math.max(1, Math.min(60, Number(minutes.value) || 5));
-    minutes.value = String(v);
-    set("idleMinutes", v);
-  });
-
   const mods = h("div", { class: "mods" });
   for (const [id, m] of Object.entries(MODULES) as [ModuleId, (typeof MODULES)[ModuleId]][]) {
     const on = s.modules.includes(id);
@@ -372,23 +391,29 @@ function islandSection(): Node[] {
       row("Abrir al acercar el mouse", "Se despliega solo al dejar el puntero sobre la isla, sin clic. Al salir se recoge.",
         toggle(s.hoverOpen, (v) => set("hoverOpen", v))),
       row("Formato de 12 horas", null, toggle(s.hour12, (v) => set("hour12", v))),
-      row("Forma de la isla", "Flotante, o pegada al borde de arriba con dos curvas que la unen a la pantalla.",
-        seg([{ value: "float", label: "Flotante" }, { value: "notch", label: "Pegada arriba" }], s.islandShape, (v) => set("islandShape", v))),
     ),
-    card("Descanso de la mascota", "Si el mouse se queda quieto, la mascota hace su animación de descanso en la isla.",
-      row("Animación de descanso", null, toggle(s.idleAnimation, (v) => set("idleAnimation", v))),
-      row("Minutos sin mover el mouse", null, minutes),
-    ),
-    card("Música", "Lo que suena en Spotify, el navegador o cualquier reproductor de Windows.",
+    card("Módulos del panel", "Qué pestañas aparecen al abrir la isla.", mods),
+  ];
+}
+
+function musicSection(): Node[] {
+  const s = settings();
+  return [
+    card("Lo que suena", "En Spotify, el navegador o cualquier reproductor de Windows.",
       row("Mostrar la canción en la isla cerrada", "Un ecualizador y el nombre mientras suena algo.",
         toggle(s.musicInPill, (v) => set("musicInPill", v))),
       row("Carátula", "La portada sola, la portada con su vinilo que sale al sonar, o el vinilo girando con la portada al centro.",
         seg([{ value: "cover", label: "Portada" }, { value: "sleeve", label: "Portada y vinilo" }, { value: "vinyl", label: "Vinilo" }],
           music().art, (v) => set("music", { ...music(), art: v }))),
+      row("Letras de las canciones", "Sincronizadas línea por línea cuando existen (de LRCLIB, gratis y sin cuenta). Solo se envía el artista y el título de lo que suena.",
+        toggle(settings().lyrics?.show ?? true, (v) => set("lyrics", { ...(settings().lyrics ?? DEFAULTS.lyrics), show: v }))),
+      row("La letra en la isla cerrada", "En lugar del nombre de la canción, la línea que se está cantando.",
+        toggle(settings().lyrics?.inPill ?? true, (v) => set("lyrics", { ...(settings().lyrics ?? DEFAULTS.lyrics), inPill: v }))),
+      row("Moverse con la música", "La línea late, tiembla o salta con cada golpe de lo que suena (también videos y juegos), y el ecualizador sigue el volumen real.",
+        toggle(perf().musicBeat, (v) => setPerf({ musicBeat: v }))),
       h("div", { class: "row-label tl-head" }, h("b", { text: "Línea de tiempo" }), h("span", { text: "Cómo se dibuja el avance de la canción." })),
       timelinePicker(),
     ),
-    card("Módulos del panel", "Qué pestañas aparecen al abrir la isla.", mods),
   ];
 }
 
@@ -429,7 +454,7 @@ function setPerf(patch: Partial<Settings["perf"]>) {
 
 function motionSection(): Node[] {
   const p = perf();
-  const lean = { pet3d: false, petFps: 10, orbit: false, vinyl: false, eq: false, flourishes: false, gpu: "eco" } as const;
+  const lean = { pet3d: false, petFps: 10, orbit: false, vinyl: false, eq: false, flourishes: false, musicBeat: false, gpu: "eco" } as const;
   const full = DEFAULTS.perf;
   const same = (a: Settings["perf"], b: Settings["perf"]) => (Object.keys(a) as (keyof Settings["perf"])[]).every((k) => a[k] === b[k]);
   const preset = (label: string, hint: string, value: Settings["perf"]) => {
@@ -457,6 +482,8 @@ function motionSection(): Node[] {
     card("Movimiento", "Detalles que se mueven solos. Solo trabajan mientras los ves.",
       row("La mascota sigue al mouse", "Mira hacia donde está el puntero (y el anillo del clima se inclina hacia él). Apagado: mira al frente y Komori deja de preguntar dónde está el mouse.",
         toggle(settings().followMouse ?? true, (v) => set("followMouse", v))),
+      row("Saludo al iniciar", "Cuando Komori arranca, la isla se abre un momento y la mascota te saluda.",
+        toggle(settings().welcome ?? true, (v) => set("welcome", v))),
       row("Clima en órbita", "El anillo del pronóstico se inclina y sigue al mouse. Apagado: queda quieto.",
         toggle(p.orbit, (v) => setPerf({ orbit: v }))),
       row("Vinilo girando", "El disco da vueltas mientras suena la música.",
@@ -465,6 +492,8 @@ function motionSection(): Node[] {
         toggle(p.eq, (v) => setPerf({ eq: v }))),
       row("Detalles animados", "El temblor de la línea glitch, las horas que flotan y otros adornos.",
         toggle(p.flourishes, (v) => setPerf({ flourishes: v }))),
+      row("Moverse con la música", "La línea de la canción late, tiembla o salta con cada golpe de lo que suena — música, un video o un juego — y el ecualizador sigue el volumen real. Komori solo mira el nivel del sonido mientras lo ves.",
+        toggle(p.musicBeat, (v) => setPerf({ musicBeat: v }))),
     ),
   ];
 }
@@ -830,7 +859,10 @@ async function chatCard(): Promise<HTMLElement> {
 }
 
 async function aiSection(): Promise<Node[]> {
-  const chat = await chatCard();
+  return [await chatCard()];
+}
+
+async function claudeSection(): Promise<Node[]> {
   const c = settings().claude;
   const linked = IN_APP ? !!(await Bridge.claudeHooksStatus()) : false;
   const note = h("p", { class: "place-note" });
@@ -851,7 +883,6 @@ async function aiSection(): Promise<Node[]> {
     h("button", { class: "chip", text: label, onclick: () => void Bridge.claudeTest(kind) });
 
   return [
-    chat,
     card("Avisos de Claude Code", "La isla te avisa cuando Claude termina una tarea, te hace preguntas o necesita permiso, con un botón para ir directo a su ventana. Komori no responde por ti: las respuestas se dan en Claude.",
       row("Conectar con Claude Code", "Agrega a Komori en los hooks de tu archivo .claude\\settings.json (antes guarda una copia).", link),
       note,
@@ -1069,11 +1100,13 @@ async function render() {
     case "pet": body = petSection(); break;
     case "wardrobe": body = wardrobeSection(); break;
     case "island": body = islandSection(); break;
+    case "music": body = musicSection(); break;
     case "motion": body = motionSection(); break;
     case "calendar": body = calendarSection(); break;
     case "apps": body = appsSection(); break;
     case "notes": body = await notesSection(); break;
     case "ai": body = await aiSection(); break;
+    case "claude": body = await claudeSection(); break;
     case "github": body = await githubSection(); break;
     case "system": body = systemSection(); break;
     case "about": body = await aboutSection(); break;
