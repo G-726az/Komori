@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/banner.png" alt="Komori" width="100%">
+  <img src="docs/banner-0.2.png" alt="Komori" width="100%">
 </p>
 
 <p align="center">
@@ -68,6 +68,8 @@ Komori se actualiza solo: cuando hay una versión nueva te avisa en la isla y la
 | <img src="docs/screenshots/0.2/mini-system.png" width="100%"> | <img src="docs/screenshots/0.2/shape-notch-open.png" width="100%"> |
 | **Ajustes: estilo, tamaño y forma** | **Animaciones, 3D y modo ahorro** |
 | <img src="docs/screenshots/0.2/set-look.png" width="100%"> | <img src="docs/screenshots/0.2/set-motion.png" width="100%"> |
+| **Tema claro «Papel»** | **Tema claro «Sakura»: calendario y clima** |
+| <img src="docs/screenshots/0.2/light-home.png" width="100%"> | <img src="docs/screenshots/0.2/light-calendar.png" width="100%"> |
 | **Guardarropa** | **Chat con IA** |
 | <img src="docs/screenshots/11-guardarropa.png" width="100%"> | <img src="docs/screenshots/09-chat.png" width="100%"> |
 
