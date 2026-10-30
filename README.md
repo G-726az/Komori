@@ -22,14 +22,14 @@
 ---
 
 ## 🎬 Komori en 73 segundos
-
+<!--
 <p align="center">
   <a href="docs/komori-0.2.mp4"><img src="docs/video-portada.png" alt="Ver el video de Komori 0.2" width="85%"></a>
 </p>
-<p align="center"><a href="docs/komori-0.2.mp4"><b>▶ Ver el video</b></a> · todo lo que hace la versión 0.2 «Estante»</p>
+<p align="center"><a href="docs/komori-0.2.mp4"><b>▶ Ver el video</b></a> · todo lo que hace la versión 0.2 «Estante»</p> -->
 
-<!-- Para que el video se reproduzca aquí mismo: en github.com, edita este archivo, arrastra docs/komori-0.2.mp4 a este punto
-     y GitHub pondrá un enlace https://github.com/user-attachments/assets/…; deja ese enlace en una línea sola y borra la portada de arriba. -->
+https://github.com/user-attachments/assets/ad817fa8-364e-4acb-9001-109a149ce42e
+
 
 ## ✨ ¿Qué es?
 
